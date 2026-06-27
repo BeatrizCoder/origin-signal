@@ -397,6 +397,39 @@ export default function App() {
                   >
                     {riskLevel}
                   </span>
+                  {result.executive?.trade_window && (
+                    <span style={{
+                      fontFamily: 'ui-monospace, Consolas, monospace',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: 1,
+                      color: AMBER,
+                      border: `1px solid ${AMBER}`,
+                      borderRadius: 4,
+                      padding: '3px 8px',
+                      textTransform: 'uppercase' as const,
+                    }}>
+                      ⬡ {result.executive.trade_window}
+                    </span>
+                  )}
+                  {result.executive?.overall_verdict && (() => {
+                    const v = result.executive.overall_verdict;
+                    const verdictColor = v === 'Go' ? '#34D399' : v === 'Hold' ? '#F87171' : '#FBBF24';
+                    return (
+                      <span style={{
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        letterSpacing: 1.5,
+                        color: verdictColor,
+                        border: `1px solid ${verdictColor}`,
+                        borderRadius: 4,
+                        padding: '3px 10px',
+                      }}>
+                        {v.toUpperCase()}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {(() => {
@@ -404,7 +437,7 @@ export default function App() {
                     { label: 'Regulatory', value: result.regulatory?.risk_score ?? result.risk_score },
                     { label: 'Climate',    value: result.climate?.climate_risk_score ?? 61 },
                     { label: 'Market',     value: result.market?.market_risk_score ?? 55 },
-                    { label: 'Logistics',  value: 44 },
+                    { label: 'Logistics',  value: result.logistics?.logistics_risk_score ?? 44 },
                   ];
                   return (
                     <div style={styles.dimGrid}>
@@ -444,6 +477,67 @@ export default function App() {
                     <div key={i} style={styles.listItem}>· {r}</div>
                   ))}
                 </div>
+
+                {result.gap?.gaps_identified && result.gap.gaps_identified.length > 0 && (
+                  <div style={styles.section}>
+                    <div style={styles.sectionTitle}>Gap Analysis</div>
+                    {result.gap.gaps_identified.map((g, i) => (
+                      <div key={i} style={{ ...styles.listItem, color: '#F87171' }}>⚠ {g}</div>
+                    ))}
+                  </div>
+                )}
+
+                {result.executive && (
+                  <div style={styles.section}>
+                    <div style={styles.sectionTitle}>Executive Briefing</div>
+                    <p style={{ fontSize: 14, color: TEXT_MUTED, lineHeight: 1.7, margin: '4px 0 12px' }}>
+                      {result.executive.executive_summary}
+                    </p>
+
+                    {result.executive.key_risks?.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                        {result.executive.key_risks.map((risk, i) => {
+                          const sev = risk.severity;
+                          const sevColor = sev === 'critical' ? '#F87171' : sev === 'high' ? '#FBBF24' : '#94A3B8';
+                          return (
+                            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                              <span style={{
+                                fontFamily: 'ui-monospace, Consolas, monospace',
+                                fontSize: 9, fontWeight: 700, letterSpacing: 1,
+                                color: sevColor, border: `1px solid ${sevColor}`,
+                                borderRadius: 3, padding: '2px 6px', flexShrink: 0, marginTop: 2,
+                                textTransform: 'uppercase' as const,
+                              }}>
+                                {sev}
+                              </span>
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{risk.title}</div>
+                                <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.5 }}>{risk.description}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {result.executive.recommended_actions?.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {result.executive.recommended_actions.map((act, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <span style={{
+                              fontFamily: 'ui-monospace, Consolas, monospace',
+                              fontSize: 9, fontWeight: 700, color: AMBER,
+                              flexShrink: 0, marginTop: 3,
+                            }}>
+                              [{act.timeline}]
+                            </span>
+                            <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.5 }}>{act.action}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>
