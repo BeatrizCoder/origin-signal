@@ -25,6 +25,7 @@ Required JSON schema:
 }
 
 Guidelines:
+- risk_score MUST be an integer strictly between 0 and 100. Never return values like 7200, 6800, or any number outside 0-100.
 - risk_score 0-25 → Low, 26-50 → Medium, 51-75 → High, 76-100 → Critical
 - findings: 2-4 specific observations grounded in the provided context
 - articles_cited: cite exact article numbers from the EUDR text when referenced
