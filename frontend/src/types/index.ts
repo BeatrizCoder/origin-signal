@@ -19,7 +19,7 @@ export interface AnalyzeResponse {
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export function getRiskLevel(score: number): RiskLevel {
-  if (score < 0.3) return 'LOW';
-  if (score <= 0.6) return 'MEDIUM';
+  if (score < 30) return 'LOW';
+  if (score <= 60) return 'MEDIUM';
   return 'HIGH';
 }

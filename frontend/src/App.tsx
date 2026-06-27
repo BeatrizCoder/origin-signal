@@ -350,7 +350,7 @@ export default function App() {
               <div>
                 <div style={styles.scoreLabel}>Export Readiness</div>
                 <span style={styles.scoreValue}>
-                  {Math.round((1 - result.risk_score) * 100)}
+                  {100 - result.risk_score}
                 </span>
               </div>
               <span
@@ -366,7 +366,7 @@ export default function App() {
 
             {(() => {
               const dims = [
-                { label: 'Regulatory', value: Math.round(result.risk_score * 100) },
+                { label: 'Regulatory', value: result.risk_score },
                 { label: 'Climate',    value: 61 },
                 { label: 'Market',     value: 55 },
                 { label: 'Logistics',  value: 44 },
