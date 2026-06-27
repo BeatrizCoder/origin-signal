@@ -385,7 +385,7 @@ export default function App() {
                   <div>
                     <div style={styles.scoreLabel}>Export Readiness</div>
                     <span style={styles.scoreValue}>
-                      {100 - result.risk_score}
+                      {result.export_readiness ?? 100 - result.risk_score}
                     </span>
                   </div>
                   <span
@@ -401,9 +401,9 @@ export default function App() {
 
                 {(() => {
                   const dims = [
-                    { label: 'Regulatory', value: result.risk_score },
-                    { label: 'Climate',    value: 61 },
-                    { label: 'Market',     value: 55 },
+                    { label: 'Regulatory', value: result.regulatory?.risk_score ?? result.risk_score },
+                    { label: 'Climate',    value: result.climate?.climate_risk_score ?? 61 },
+                    { label: 'Market',     value: result.market?.market_risk_score ?? 55 },
                     { label: 'Logistics',  value: 44 },
                   ];
                   return (
