@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { analyzeRoute } from './services/api';
 import type { AnalyzeResponse } from './types';
 import { getRiskLevel } from './types';
+import HexMap from './components/HexMap';
+
+type Tab = 'analysis' | 'map';
 
 const AMBER = '#D4900A';
 const BG = '#0B1120';
@@ -255,6 +258,7 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('analysis');
   const [query, setQuery] = useState('');
   const [commodity, setCommodity] = useState('coffee');
   const [loading, setLoading] = useState(false);
@@ -296,120 +300,153 @@ export default function App() {
         </div>
       </header>
 
-      <main style={styles.main}>
-        <form onSubmit={handleAnalyze} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={styles.label}>Query</label>
-            <textarea
-              style={styles.textarea}
-              placeholder="e.g. EUDR compliance for coffee exports from Minas Gerais to Germany"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label style={styles.label}>Commodity</label>
-            <select
-              style={styles.select}
-              value={commodity}
-              onChange={e => setCommodity(e.target.value)}
-              disabled={loading}
-            >
-              <option value="coffee">Coffee</option>
-              <option value="fruits">Fruits</option>
-            </select>
-          </div>
-
-          <div style={styles.row}>
-            <div>
-              <label style={styles.label}>Origin</label>
-              <div style={styles.readonlyField}>Brazil</div>
-            </div>
-            <div>
-              <label style={styles.label}>Destination</label>
-              <div style={styles.readonlyField}>European Union</div>
-            </div>
-          </div>
-
+      {/* Tab bar */}
+      <div style={{ width: '100%', maxWidth: 720, display: 'flex', gap: 0, borderBottom: `1px solid ${BORDER}`, marginBottom: 28 }}>
+        {(['analysis', 'map'] as Tab[]).map(tab => (
           <button
-            type="submit"
-            style={{ ...styles.button, ...(loading || !query.trim() ? styles.buttonDisabled : {}) }}
-            disabled={loading || !query.trim()}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '10px 20px',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1.5,
+              fontFamily: 'ui-monospace, Consolas, monospace',
+              textTransform: 'uppercase' as const,
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === tab ? `2px solid ${AMBER}` : '2px solid transparent',
+              color: activeTab === tab ? TEXT : TEXT_MUTED,
+              cursor: 'pointer',
+              marginBottom: -1,
+              transition: 'color 0.15s',
+            }}
           >
-            {loading ? 'Analyzing…' : 'Analyze'}
+            {tab === 'analysis' ? 'Analysis' : 'Map'}
           </button>
-        </form>
+        ))}
+      </div>
 
-        {error && <div style={styles.errorBox}>{error}</div>}
+      <main style={{ ...styles.main, maxWidth: activeTab === 'map' ? 860 : 720 }}>
+        {activeTab === 'map' && <HexMap />}
 
-        {result && riskLevel && riskColor && (
-          <div style={styles.resultCard}>
-            <div style={styles.scoreRow}>
+        {activeTab === 'analysis' && (
+          <>
+            <form onSubmit={handleAnalyze} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <div style={styles.scoreLabel}>Export Readiness</div>
-                <span style={styles.scoreValue}>
-                  {100 - result.risk_score}
-                </span>
+                <label style={styles.label}>Query</label>
+                <textarea
+                  style={styles.textarea}
+                  placeholder="e.g. EUDR compliance for coffee exports from Minas Gerais to Germany"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  disabled={loading}
+                />
               </div>
-              <span
-                style={{
-                  ...styles.riskBadge,
-                  background: riskColor.bg,
-                  color: riskColor.text,
-                }}
-              >
-                {riskLevel}
-              </span>
-            </div>
 
-            {(() => {
-              const dims = [
-                { label: 'Regulatory', value: result.risk_score },
-                { label: 'Climate',    value: 61 },
-                { label: 'Market',     value: 55 },
-                { label: 'Logistics',  value: 44 },
-              ];
-              return (
-                <div style={styles.dimGrid}>
-                  {dims.map(({ label, value }) => {
-                    const color = getDimColor(value);
-                    return (
-                      <div key={label} style={styles.dimCard}>
-                        <div style={styles.dimLabel}>{label}</div>
-                        <div style={{ ...styles.dimValue, color }}>{value}</div>
-                        <div style={styles.dimBarTrack}>
-                          <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 2 }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div>
+                <label style={styles.label}>Commodity</label>
+                <select
+                  style={styles.select}
+                  value={commodity}
+                  onChange={e => setCommodity(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="coffee">Coffee</option>
+                  <option value="fruits">Fruits</option>
+                </select>
+              </div>
+
+              <div style={styles.row}>
+                <div>
+                  <label style={styles.label}>Origin</label>
+                  <div style={styles.readonlyField}>Brazil</div>
                 </div>
-              );
-            })()}
+                <div>
+                  <label style={styles.label}>Destination</label>
+                  <div style={styles.readonlyField}>European Union</div>
+                </div>
+              </div>
 
-            <div style={styles.section}>
-              <div style={styles.sectionTitle}>Findings</div>
-              {result.findings.map((f, i) => (
-                <div key={i} style={styles.listItem}>· {f}</div>
-              ))}
-            </div>
+              <button
+                type="submit"
+                style={{ ...styles.button, ...(loading || !query.trim() ? styles.buttonDisabled : {}) }}
+                disabled={loading || !query.trim()}
+              >
+                {loading ? 'Analyzing…' : 'Analyze'}
+              </button>
+            </form>
 
-            <div style={styles.section}>
-              <div style={styles.sectionTitle}>Articles Cited</div>
-              {result.articles_cited.map((a, i) => (
-                <div key={i} style={{ ...styles.listItem, ...styles.monoItem }}>· {a}</div>
-              ))}
-            </div>
+            {error && <div style={styles.errorBox}>{error}</div>}
 
-            <div style={styles.section}>
-              <div style={styles.sectionTitle}>Recommendations</div>
-              {result.recommendations.map((r, i) => (
-                <div key={i} style={styles.listItem}>· {r}</div>
-              ))}
-            </div>
-          </div>
+            {result && riskLevel && riskColor && (
+              <div style={styles.resultCard}>
+                <div style={styles.scoreRow}>
+                  <div>
+                    <div style={styles.scoreLabel}>Export Readiness</div>
+                    <span style={styles.scoreValue}>
+                      {100 - result.risk_score}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      ...styles.riskBadge,
+                      background: riskColor.bg,
+                      color: riskColor.text,
+                    }}
+                  >
+                    {riskLevel}
+                  </span>
+                </div>
+
+                {(() => {
+                  const dims = [
+                    { label: 'Regulatory', value: result.risk_score },
+                    { label: 'Climate',    value: 61 },
+                    { label: 'Market',     value: 55 },
+                    { label: 'Logistics',  value: 44 },
+                  ];
+                  return (
+                    <div style={styles.dimGrid}>
+                      {dims.map(({ label, value }) => {
+                        const color = getDimColor(value);
+                        return (
+                          <div key={label} style={styles.dimCard}>
+                            <div style={styles.dimLabel}>{label}</div>
+                            <div style={{ ...styles.dimValue, color }}>{value}</div>
+                            <div style={styles.dimBarTrack}>
+                              <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 2 }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                <div style={styles.section}>
+                  <div style={styles.sectionTitle}>Findings</div>
+                  {result.findings.map((f, i) => (
+                    <div key={i} style={styles.listItem}>· {f}</div>
+                  ))}
+                </div>
+
+                <div style={styles.section}>
+                  <div style={styles.sectionTitle}>Articles Cited</div>
+                  {result.articles_cited.map((a, i) => (
+                    <div key={i} style={{ ...styles.listItem, ...styles.monoItem }}>· {a}</div>
+                  ))}
+                </div>
+
+                <div style={styles.section}>
+                  <div style={styles.sectionTitle}>Recommendations</div>
+                  {result.recommendations.map((r, i) => (
+                    <div key={i} style={styles.listItem}>· {r}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
