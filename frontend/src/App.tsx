@@ -43,7 +43,7 @@ export default function App() {
     });
 
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out. Please try again.')), 30_000)
+      setTimeout(() => reject(new Error('Request timed out. Please try again.')), 60_000)
     );
 
     try {

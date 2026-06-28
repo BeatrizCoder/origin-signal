@@ -45,6 +45,8 @@ const IMPORT_ORIGINS = [
   'Netherlands',
   'France',
   'Argentina',
+  'Uruguay',
+  'Paraguay',
   'Colombia',
   'Peru',
   'Chile',

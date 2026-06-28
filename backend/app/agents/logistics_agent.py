@@ -40,10 +40,12 @@ IMPORT_ROUTES: dict[str, dict] = {
     "Germany":        {"origin_port": "Port of Hamburg",       "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 62},
     "Netherlands":    {"origin_port": "Port of Rotterdam",     "destination_port": "Porto de Santos", "transit_days": 28, "dhl_index": 45},
     "France":         {"origin_port": "Port of Le Havre",      "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 52},
-    "Argentina":      {"origin_port": "Port of Buenos Aires",  "destination_port": "Porto de Santos", "transit_days":  5, "dhl_index": 48},
+    "Argentina":      {"origin_port": "Port of Buenos Aires",  "destination_port": "Porto de Santos", "transit_days":  4, "dhl_index": 48},
+    "Uruguay":        {"origin_port": "Port of Montevideo",    "destination_port": "Porto de Santos", "transit_days":  3, "dhl_index": 42},
+    "Paraguay":       {"origin_port": "Port of Asunción",      "destination_port": "Porto de Santos", "transit_days":  3, "dhl_index": 45},
     "Colombia":       {"origin_port": "Port of Cartagena",     "destination_port": "Porto de Santos", "transit_days":  8, "dhl_index": 52},
-    "Peru":           {"origin_port": "Port of Callao",        "destination_port": "Porto de Santos", "transit_days": 13, "dhl_index": 55},
-    "Chile":          {"origin_port": "Port of Valparaíso",    "destination_port": "Porto de Santos", "transit_days": 10, "dhl_index": 50},
+    "Peru":           {"origin_port": "Port of Callao",        "destination_port": "Porto de Santos", "transit_days": 12, "dhl_index": 50},
+    "Chile":          {"origin_port": "Port of Valparaíso",    "destination_port": "Porto de Santos", "transit_days":  6, "dhl_index": 44},
 }
 
 _SANTOS_DHL_INDEX = 55

@@ -152,7 +152,7 @@ class ClimateAgent:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=6.0) as client:
                 forecast_resp, historical_resp = await asyncio.gather(
                     client.get(OPEN_METEO_URL, params={**base_params, "forecast_days": 16}),
                     client.get(OPEN_METEO_URL, params={**base_params, "past_days": 30, "forecast_days": 1}),

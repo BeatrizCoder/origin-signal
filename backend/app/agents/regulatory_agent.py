@@ -109,12 +109,34 @@ class RegulatoryAgent:
                     "Mercosul-EU agreement status (under ratification — may reduce tariffs when in force), "
                     "MAPA/ANVISA entry requirements, generally lower risk origin with established trade flows."
                 )
-            elif origin in ("Argentina", "Colombia", "Peru", "Chile"):
+            elif origin in ("Argentina", "Uruguay", "Paraguay"):
                 origin_context = (
-                    "Focus on: Mercosul/trade agreement benefits — Argentina is Mercosul member (zero/reduced II), "
-                    "Colombia/Peru/Chile under ACE ALADI agreements (preferential tariffs), "
-                    "MAPA phytosanitary requirements still apply, shorter transit times reduce logistics risk, "
-                    "currency considerations (ARS/BRL, COP/BRL volatility)."
+                    "Mercosul full member. Key advantages: II = 0% for most agricultural goods under TEC, "
+                    "simplified SISCOMEX process. Requirements: SENASA (Argentina)/MGAP (Uruguay)/SENAVE (Paraguay) "
+                    "phytosanitary certificate, Certificate of Origin Form Mercosul mandatory for zero-tariff treatment. "
+                    "MAPA inspection at entry still required. Very favorable regulatory environment."
+                )
+            elif origin == "Colombia":
+                origin_context = (
+                    "ACE 59 agreement with Mercosul provides partial tariff reductions. "
+                    "ICA (Instituto Colombiano Agropecuario) phytosanitary certificate required. "
+                    "DIAN export documentation needed. Check specific NCM for applicable ACE 59 rate — "
+                    "may range from 0% to standard TEC depending on product. "
+                    "Coffee from Colombia: high quality arabica, ICA export certificate, MAPA inspection at Santos."
+                )
+            elif origin == "Peru":
+                origin_context = (
+                    "ACE 58 agreement with Mercosul provides partial tariff reductions. "
+                    "SENASA Peru phytosanitary certificate required. "
+                    "Organic coffee and fruits from Peru may have additional IBD/organic certification requirements "
+                    "for the Brazilian market. Check NCM for ACE 58 preferential rate."
+                )
+            elif origin == "Chile":
+                origin_context = (
+                    "ACE 35 (Chile-Mercosul) provides significant tariff reductions, "
+                    "near-zero for most agricultural products. "
+                    "SAG (Servicio Agrícola y Ganadero) phytosanitary certificate required. "
+                    "Very favorable trade agreement — one of best tariff treatments available for Brazil imports."
                 )
             else:
                 origin_context = (

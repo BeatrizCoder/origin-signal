@@ -200,7 +200,7 @@ class ExecutiveAgent:
         }, indent=2, ensure_ascii=False)
 
         response = self._client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-haiku-4-5-20251001" if is_import else "claude-sonnet-4-6",
             max_tokens=2048,
             system=system_prompt,
             messages=[{"role": "user", "content": f"Agent reports:\n\n{context}"}],
