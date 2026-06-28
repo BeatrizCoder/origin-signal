@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { getRiskLevel } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 type Layer = 'regulatory' | 'climate' | 'market' | 'composite';
 
@@ -37,11 +38,13 @@ const REGIONS: Region[] = [
   { id: 11, name: 'Mogiana',            col: 4, row: 3, scores: { regulatory: 44, climate: 46, market: 36, logistics: 43 } },
 ];
 
-const HEX_R = 52;
+const HEX_R = 48;
+const SIDEBAR_W = 280;
 
 const AMBER      = '#D4900A';
 const BG         = '#0B1120';
-const SURFACE    = '#131C2E';
+const SIDEBAR_BG = '#0F1A2E';
+const BORDER_CSS = 'rgba(255,255,255,0.06)';
 const BORDER     = '#1E2D45';
 const TEXT       = '#F1F5F9';
 const TEXT_MUTED = '#7A90A8';
@@ -52,24 +55,10 @@ const RISK_COLORS: Record<string, { bg: string; text: string }> = {
   HIGH:   { bg: '#2D0D0D', text: '#F87171' },
 };
 
-const LAYER_LABELS: Record<Layer, string> = {
-  regulatory: 'Regulatório',
-  climate:    'Climático',
-  market:     'Mercado',
-  composite:  'Composto',
-};
-
-const DIM_LABELS: Array<{ key: keyof RegionScores; label: string }> = [
-  { key: 'regulatory', label: 'Regulatório' },
-  { key: 'climate',    label: 'Climático' },
-  { key: 'market',     label: 'Mercado' },
-  { key: 'logistics',  label: 'Logístico' },
-];
-
 const LEGEND_ITEMS = [
-  { color: '#34D399', label: 'LOW',   range: '< 30'  },
-  { color: '#FBBF24', label: 'MÉDIO', range: '30–69' },
-  { color: '#F87171', label: 'ALTO',  range: '≥ 70'  },
+  { color: '#34D399', label: 'LOW',    range: '< 30'  },
+  { color: '#FBBF24', label: 'MEDIUM', range: '30–69' },
+  { color: '#F87171', label: 'HIGH',   range: '≥ 70'  },
 ];
 
 function getLayerScore(scores: RegionScores, layer: Layer): number {
@@ -133,8 +122,6 @@ function getVerdict(composite: number): { label: string; color: string } {
 export default function HexMap({ onAnalyzeRegion }: Props) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Shared between draw() and event handlers — avoids stale coords after resize
   const drawParamsRef = useRef({ r: HEX_R, ox: 0, oy: 0 });
 
   const [layer,           setLayer]           = useState<Layer>('composite');
@@ -143,17 +130,30 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
   const [liveScores,      setLiveScores]      = useState<Record<string, RegionScores>>({});
   const [analyzingRegion, setAnalyzingRegion] = useState<string | null>(null);
 
-  // Animation refs — mutated in RAF, never trigger re-render
+  const { t } = useLanguage();
+
   const pulseRef    = useRef(0.65);
   const pulseDirRef = useRef(1);
   const rafRef      = useRef(-1);
-
-  // Always points to the freshest draw closure (avoids stale RAF loop)
-  const drawRef = useRef<() => void>(() => {});
+  const drawRef     = useRef<() => void>(() => {});
 
   function getRegionScores(region: Region): RegionScores {
     return liveScores[region.name] ?? region.scores;
   }
+
+  const LAYER_LABELS: Record<Layer, string> = {
+    regulatory: t('regulatory'),
+    climate:    t('climate'),
+    market:     t('market'),
+    composite:  'Composite',
+  };
+
+  const DIM_LABELS: Array<{ key: keyof RegionScores; label: string }> = [
+    { key: 'regulatory', label: t('regulatory') },
+    { key: 'climate',    label: t('climate') },
+    { key: 'market',     label: t('market') },
+    { key: 'logistics',  label: t('logistics') },
+  ];
 
   // ── Draw ──────────────────────────────────────────────────────────────────
   function draw() {
@@ -162,7 +162,6 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // DPR / HD fix via getBoundingClientRect
     const dpr  = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -174,7 +173,6 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
     const W = rect.width;
     const H = rect.height;
 
-    // Dynamic centering
     const r     = HEX_R;
     const w     = Math.sqrt(3) * r;
     const gridW = 5.5 * w;
@@ -208,27 +206,24 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
       ctx.lineWidth   = isSelected ? 2.5 : 1.5;
       ctx.stroke();
 
-      // Region name
       const [line1, line2] = wrapText(region.name);
       ctx.fillStyle    = 'rgba(255,255,255,0.92)';
-      ctx.font         = 'bold 11px ui-monospace, Consolas, monospace';
+      ctx.font         = 'bold 10px ui-monospace, Consolas, monospace';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       if (line2) {
-        ctx.fillText(line1.toUpperCase(), cx, cy - 16);
-        ctx.fillText(line2.toUpperCase(), cx, cy - 4);
+        ctx.fillText(line1.toUpperCase(), cx, cy - 14);
+        ctx.fillText(line2.toUpperCase(), cx, cy - 3);
       } else {
-        ctx.fillText(line1.toUpperCase(), cx, cy - 9);
+        ctx.fillText(line1.toUpperCase(), cx, cy - 8);
       }
 
-      // Score number
-      ctx.font      = 'bold 17px ui-monospace, Consolas, monospace';
+      ctx.font      = 'bold 16px ui-monospace, Consolas, monospace';
       ctx.fillStyle = '#000000AA';
-      ctx.fillText(String(score), cx + 1, cy + 18);
+      ctx.fillText(String(score), cx + 1, cy + 16);
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      ctx.fillText(String(score), cx, cy + 17);
+      ctx.fillText(String(score), cx, cy + 15);
 
-      // Live data dot — amber circle, top-right corner
       if (isLive) {
         ctx.beginPath();
         ctx.arc(cx + r * 0.55, cy - r * 0.62, 5, 0, Math.PI * 2);
@@ -241,23 +236,19 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
     }
   }
 
-  // Keep drawRef fresh every render
   drawRef.current = draw;
 
-  // Redraw on state changes (skipped while RAF animation is running)
   useEffect(() => {
     if (!analyzingRegion) drawRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layer, selected, hovered, liveScores, analyzingRegion]);
 
-  // Redraw on container resize
   useEffect(() => {
     const observer = new ResizeObserver(() => drawRef.current());
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Pulse animation while a region is being analyzed
   useEffect(() => {
     if (!analyzingRegion) return;
     function tick() {
@@ -301,7 +292,7 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
     }
   }
 
-  // ── Sidebar derived values ─────────────────────────────────────────────────
+  // ── Sidebar derived values ────────────────────────────────────────────────
   const sidebarScores       = selected ? getRegionScores(selected) : null;
   const composite           = sidebarScores
     ? Math.round((sidebarScores.regulatory + sidebarScores.climate + sidebarScores.market + sidebarScores.logistics) / 4)
@@ -315,195 +306,243 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: '100%', height: 'calc(100vh - 120px)', background: BG }}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: 'calc(100vh - 120px)',
+        background: BG,
+        display: 'flex',
+      }}
     >
-      {/* ── Canvas (fills entire container) ── */}
-      <canvas
-        ref={canvasRef}
-        onClick={handleClick}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHovered(-1)}
-        style={{
-          position: 'absolute', inset: 0, display: 'block',
-          width: '100%', height: '100%',
-          cursor: hovered >= 0 ? 'pointer' : 'default',
-        }}
-      />
+      {/* ── Canvas area — takes all space except sidebar ── */}
+      <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+        <canvas
+          ref={canvasRef}
+          onClick={handleClick}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setHovered(-1)}
+          style={{
+            position: 'absolute', inset: 0, display: 'block',
+            width: '100%', height: '100%',
+            cursor: hovered >= 0 ? 'pointer' : 'default',
+          }}
+        />
 
-      {/* ── Layer toggle — top left ── */}
-      <div style={{
-        position: 'absolute', top: 16, left: 16, zIndex: 10,
-        display: 'flex', gap: 8,
-      }}>
-        {(Object.keys(LAYER_LABELS) as Layer[]).map(l => (
-          <button
-            key={l}
-            onClick={() => setLayer(l)}
-            style={{
-              padding: '5px 12px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
-              fontFamily: 'ui-monospace, Consolas, monospace',
-              border: `1px solid ${layer === l ? AMBER : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: 4,
-              background: layer === l ? AMBER : 'rgba(11,17,32,0.82)',
-              color: layer === l ? '#000' : TEXT_MUTED,
-              cursor: 'pointer', textTransform: 'uppercase' as const,
-              backdropFilter: 'blur(4px)',
-              transition: 'all 0.15s',
-            }}
-          >
-            {LAYER_LABELS[l]}
-          </button>
-        ))}
+        {/* Layer toggle — top left of canvas area */}
+        <div style={{
+          position: 'absolute', top: 16, left: 16, zIndex: 10,
+          display: 'flex', gap: 8,
+        }}>
+          {(Object.keys(LAYER_LABELS) as Layer[]).map(l => (
+            <button
+              key={l}
+              onClick={() => setLayer(l)}
+              style={{
+                padding: '5px 12px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
+                fontFamily: 'ui-monospace, Consolas, monospace',
+                border: `1px solid ${layer === l ? AMBER : 'rgba(255,255,255,0.12)'}`,
+                borderRadius: 4,
+                background: layer === l ? AMBER : 'rgba(11,17,32,0.82)',
+                color: layer === l ? '#000' : TEXT_MUTED,
+                cursor: 'pointer', textTransform: 'uppercase' as const,
+                backdropFilter: 'blur(4px)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {LAYER_LABELS[l]}
+            </button>
+          ))}
+        </div>
+
+        {/* Legend — bottom left of canvas area */}
+        <div style={{
+          position: 'absolute', bottom: 16, left: 16, zIndex: 10,
+          background: 'rgba(11,17,32,0.85)', backdropFilter: 'blur(4px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 6, padding: '7px 12px',
+          display: 'flex', gap: 14, alignItems: 'center',
+        }}>
+          {LEGEND_ITEMS.map(({ color, label, range }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: 2,
+                background: color + 'CC',
+                border: `1px solid ${color}66`,
+              }} />
+              <span style={{
+                fontSize: 9, color: TEXT_MUTED,
+                fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5,
+              }}>{label} {range}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* ── Sidebar — top right, floating ── */}
-      {selected && riskLevel && sidebarScores && verdict && (
-        <div style={{
-          position: 'absolute', top: 16, right: 16, zIndex: 10,
-          width: 260, background: 'rgba(19,28,46,0.92)',
-          border: `1px solid ${BORDER}`, borderRadius: 8, padding: 16,
-          backdropFilter: 'blur(8px)',
-          display: 'flex', flexDirection: 'column', gap: 14,
-        }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{
-                fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: TEXT,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-                textTransform: 'uppercase' as const, lineHeight: 1.4,
-              }}>{selected.name}</span>
-              {isSelectedLive && (
+      {/* ── Sidebar panel — fixed width, always visible ── */}
+      <div style={{
+        width: SIDEBAR_W,
+        flexShrink: 0,
+        height: '100%',
+        background: SIDEBAR_BG,
+        borderLeft: `1px solid ${BORDER_CSS}`,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
+        {selected && riskLevel && sidebarScores && verdict ? (
+          /* ── Selected region content ── */
+          <div style={{
+            flex: 1, overflowY: 'auto', padding: 20,
+            display: 'flex', flexDirection: 'column', gap: 16,
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <span style={{
-                  fontSize: 9, color: AMBER,
-                  fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5,
-                }}>● Live</span>
-              )}
+                  fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  textTransform: 'uppercase' as const,
+                }}>{t('selected_cell')}</span>
+                <span style={{
+                  fontSize: 13, fontWeight: 700, letterSpacing: 0.8, color: TEXT,
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  textTransform: 'uppercase' as const, lineHeight: 1.4,
+                }}>{selected.name}</span>
+                {isSelectedLive && (
+                  <span style={{
+                    fontSize: 9, color: AMBER,
+                    fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5,
+                  }}>● Live</span>
+                )}
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                style={{
+                  background: 'none', border: 'none', color: TEXT_MUTED,
+                  cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0, flexShrink: 0,
+                }}
+              >×</button>
             </div>
-            <button
-              onClick={() => setSelected(null)}
-              style={{
-                background: 'none', border: 'none', color: TEXT_MUTED,
-                cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0, flexShrink: 0,
-              }}
-            >×</button>
-          </div>
 
-          {/* Export Readiness + badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div>
-              <div style={{
-                fontSize: 9, fontWeight: 600, letterSpacing: 1.8, color: '#475569',
-                textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 2,
-              }}>Export Readiness</div>
-              <div style={{
-                fontFamily: 'ui-monospace, Consolas, monospace',
-                fontSize: 36, fontWeight: 700, color: AMBER, lineHeight: 1,
-              }}>{exportReadiness}</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
-              <span style={{
-                fontFamily: 'ui-monospace, Consolas, monospace',
-                fontWeight: 700, fontSize: 9, letterSpacing: 1,
-                padding: '2px 8px', borderRadius: 3, alignSelf: 'flex-start',
-                background: RISK_COLORS[riskLevel].bg, color: RISK_COLORS[riskLevel].text,
-              }}>{riskLevel}</span>
-              {isSelectedLive && (
+            {/* Export Readiness + badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div>
+                <div style={{
+                  fontSize: 9, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
+                  textTransform: 'uppercase' as const,
+                  fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 2,
+                }}>{t('export_readiness')}</div>
+                <div style={{
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontSize: 40, fontWeight: 700, color: AMBER, lineHeight: 1,
+                }}>{exportReadiness}</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
                 <span style={{
                   fontFamily: 'ui-monospace, Consolas, monospace',
                   fontWeight: 700, fontSize: 9, letterSpacing: 1,
                   padding: '2px 8px', borderRadius: 3, alignSelf: 'flex-start',
-                  color: verdict.color, border: `1px solid ${verdict.color}55`,
-                }}>{verdict.label}</span>
-              )}
+                  background: RISK_COLORS[riskLevel].bg, color: RISK_COLORS[riskLevel].text,
+                }}>{riskLevel}</span>
+                {isSelectedLive && (
+                  <span style={{
+                    fontFamily: 'ui-monospace, Consolas, monospace',
+                    fontWeight: 700, fontSize: 9, letterSpacing: 1,
+                    padding: '2px 8px', borderRadius: 3, alignSelf: 'flex-start',
+                    color: verdict.color, border: `1px solid ${verdict.color}55`,
+                  }}>{verdict.label}</span>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Dimension bars */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {DIM_LABELS.map(({ key, label }) => {
-              const val = sidebarScores[key];
-              const col = getColor(val);
-              return (
-                <div key={key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{
-                      fontSize: 9, fontWeight: 600, letterSpacing: 1.2, color: TEXT_MUTED,
-                      textTransform: 'uppercase' as const,
-                      fontFamily: 'ui-monospace, Consolas, monospace',
-                    }}>{label}</span>
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, color: col,
-                      fontFamily: 'ui-monospace, Consolas, monospace',
-                    }}>{val}</span>
+            {/* Dimension bars */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {DIM_LABELS.map(({ key, label }) => {
+                const val = sidebarScores[key];
+                const col = getColor(val);
+                return (
+                  <div key={key}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 600, letterSpacing: 1.2, color: TEXT_MUTED,
+                        textTransform: 'uppercase' as const,
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                      }}>{label}</span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, color: col,
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                      }}>{val}</span>
+                    </div>
+                    <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${val}%`, background: col, borderRadius: 2 }} />
+                    </div>
                   </div>
-                  <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${val}%`, background: col, borderRadius: 2 }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          {/* Live data attribution */}
-          {isSelectedLive && (
+            {/* Live data attribution */}
+            {isSelectedLive && (
+              <div style={{
+                fontSize: 9, color: AMBER,
+                fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.3,
+                borderTop: `1px solid ${BORDER_CSS}`, paddingTop: 10,
+              }}>
+                {t('live_data')}
+              </div>
+            )}
+
+            {/* Analyze button */}
+            <button
+              onClick={handleAnalyzeClick}
+              disabled={!!analyzingRegion || !onAnalyzeRegion}
+              style={{
+                width: '100%',
+                padding: '8px 14px',
+                marginTop: 4,
+                background: (analyzingRegion || !onAnalyzeRegion) ? 'rgba(212,144,10,0.15)' : AMBER,
+                color: (analyzingRegion || !onAnalyzeRegion) ? AMBER : '#000',
+                border: `1px solid ${AMBER}`,
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                fontFamily: 'ui-monospace, Consolas, monospace',
+                textTransform: 'uppercase' as const,
+                cursor: (analyzingRegion || !onAnalyzeRegion) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {isSelectedAnalyzing ? 'ANALYZING...' : t('analyze_region')}
+            </button>
+          </div>
+        ) : (
+          /* ── Placeholder when no region selected ── */
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24,
+          }}>
             <div style={{
-              fontSize: 9, color: AMBER,
-              fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.3,
-              borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10,
-            }}>
-              ● Live data · Open-Meteo + EUDR RAG
-            </div>
-          )}
-
-          {/* Analyze button */}
-          <button
-            onClick={handleAnalyzeClick}
-            disabled={!!analyzingRegion || !onAnalyzeRegion}
-            style={{
-              width: '100%',
-              padding: '6px 14px',
-              marginTop: 10,
-              background: (analyzingRegion || !onAnalyzeRegion) ? 'rgba(212,144,10,0.15)' : AMBER,
-              color: (analyzingRegion || !onAnalyzeRegion) ? AMBER : '#000',
-              border: `1px solid ${AMBER}`,
-              borderRadius: 4,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              fontFamily: 'ui-monospace, Consolas, monospace',
+              width: 40, height: 40, borderRadius: '50%',
+              border: `1px solid ${BORDER}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: TEXT_MUTED, fontSize: 18,
+            }}>⬡</div>
+            <div style={{
+              fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
+              fontFamily: 'ui-monospace, Consolas, monospace', textAlign: 'center',
               textTransform: 'uppercase' as const,
-              cursor: (analyzingRegion || !onAnalyzeRegion) ? 'not-allowed' : 'pointer',
-              transition: 'all 0.15s',
-            }}
-          >
-            {isSelectedAnalyzing ? 'ANALYZING...' : 'ANALYZE REGION'}
-          </button>
-        </div>
-      )}
-
-      {/* ── Legend — bottom left ── */}
-      <div style={{
-        position: 'absolute', bottom: 16, left: 16, zIndex: 10,
-        background: 'rgba(11,17,32,0.85)', backdropFilter: 'blur(4px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 6, padding: '7px 12px',
-        display: 'flex', gap: 14, alignItems: 'center',
-      }}>
-        {LEGEND_ITEMS.map(({ color, label, range }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            }}>
+              Select a region<br />to view details
+            </div>
             <div style={{
-              width: 10, height: 10, borderRadius: 2,
-              background: color + 'CC',
-              border: `1px solid ${color}66`,
-            }} />
-            <span style={{
-              fontSize: 9, color: TEXT_MUTED,
-              fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5,
-            }}>{label} {range}</span>
+              fontSize: 9, color: BORDER, fontFamily: 'ui-monospace, Consolas, monospace',
+              textAlign: 'center', lineHeight: 1.8,
+            }}>
+              12 BR coffee regions<br />with EUDR risk scoring
+            </div>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
