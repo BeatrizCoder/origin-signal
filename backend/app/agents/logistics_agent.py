@@ -33,33 +33,20 @@ _DEST_HANDLING_DAYS = 3
 
 # ── Import route data ──────────────────────────────────────────────────────────
 
-IMPORT_ORIGIN_PORTS: dict[str, dict] = {
-    "United States":  {"name": "Port of Houston",      "capacity": "normal",   "avg_days": 5},
-    "China":          {"name": "Port of Shanghai",     "capacity": "normal",   "avg_days": 5},
-    "European Union": {"name": "Port of Hamburg",      "capacity": "normal",   "avg_days": 4},
-    "Germany":        {"name": "Port of Hamburg",      "capacity": "normal",   "avg_days": 4},
-    "Netherlands":    {"name": "Port of Rotterdam",    "capacity": "normal",   "avg_days": 3},
-    "France":         {"name": "Port of Le Havre",     "capacity": "normal",   "avg_days": 4},
-    "Argentina":      {"name": "Port of Buenos Aires", "capacity": "normal",   "avg_days": 2},
-    "Colombia":       {"name": "Port of Cartagena",    "capacity": "normal",   "avg_days": 2},
-    "Peru":           {"name": "Port of Callao",       "capacity": "normal",   "avg_days": 4},
-    "Chile":          {"name": "Port of Valparaíso",   "capacity": "normal",   "avg_days": 3},
+IMPORT_ROUTES: dict[str, dict] = {
+    "United States":  {"origin_port": "Port of Miami",         "destination_port": "Porto de Santos", "transit_days": 16, "dhl_index": 58},
+    "China":          {"origin_port": "Port of Shanghai",      "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 71},
+    "European Union": {"origin_port": "Port of Hamburg",       "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 62},
+    "Germany":        {"origin_port": "Port of Hamburg",       "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 62},
+    "Netherlands":    {"origin_port": "Port of Rotterdam",     "destination_port": "Porto de Santos", "transit_days": 28, "dhl_index": 45},
+    "France":         {"origin_port": "Port of Le Havre",      "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 52},
+    "Argentina":      {"origin_port": "Port of Buenos Aires",  "destination_port": "Porto de Santos", "transit_days":  5, "dhl_index": 48},
+    "Colombia":       {"origin_port": "Port of Cartagena",     "destination_port": "Porto de Santos", "transit_days":  8, "dhl_index": 52},
+    "Peru":           {"origin_port": "Port of Callao",        "destination_port": "Porto de Santos", "transit_days": 13, "dhl_index": 55},
+    "Chile":          {"origin_port": "Port of Valparaíso",    "destination_port": "Porto de Santos", "transit_days": 10, "dhl_index": 50},
 }
 
-# Sea transit days from import origin port → Porto de Santos
-_SEA_DAYS_TO_SANTOS: dict[str, int] = {
-    "Port of Houston":      16,
-    "Port of Shanghai":     30,
-    "Port of Hamburg":      25,
-    "Port of Rotterdam":    22,
-    "Port of Le Havre":     26,
-    "Port of Buenos Aires":  2,
-    "Port of Cartagena":     8,
-    "Port of Callao":       10,
-    "Port of Valparaíso":    7,
-}
-
-_SANTOS_DEST = {"name": "Porto de Santos", "dhl_index": 55, "handling_days": 3}
+_SANTOS_DHL_INDEX = 55
 
 
 def _risk_level(score: int) -> str:
@@ -74,38 +61,43 @@ class LogisticsAgent:
         is_import = trade_direction == "import"
 
         if is_import:
-            origin_port  = IMPORT_ORIGIN_PORTS.get(origin, {"name": "Origin Port", "capacity": "normal", "avg_days": 4})
-            dest_port    = _SANTOS_DEST
-            sea_days     = _SEA_DAYS_TO_SANTOS.get(origin_port["name"], 20)
-            transit_days = origin_port["avg_days"] + sea_days + dest_port["handling_days"]
+            route = IMPORT_ROUTES.get(origin, {
+                "origin_port": "Origin Port", "destination_port": "Porto de Santos",
+                "transit_days": 20, "dhl_index": 55,
+            })
+            origin_port_name  = route["origin_port"]
+            dest_port_name    = route["destination_port"]
+            transit_days      = route["transit_days"]
+            origin_dhl        = route["dhl_index"]
 
             score = 20
-            if origin_port["capacity"] in ("reduced", "moderate"):
-                score += 15
-            if dest_port["dhl_index"] > 60:
-                score += 15
+            if origin_dhl > 70:
+                score += 20
+            elif origin_dhl > 60:
+                score += 10
+            if _SANTOS_DHL_INDEX > 60:
+                score += 10
             if commodity.lower() in ("fruits", "fruit"):
                 score += 10
             score = max(0, min(100, score))
 
             findings = [
-                f"Import origin port: {origin_port['name']} — capacity '{origin_port['capacity']}', "
-                f"average loading time {origin_port['avg_days']} days.",
-                f"Destination port: {dest_port['name']} — DHL Logistics Performance Index {dest_port['dhl_index']}/100 "
-                f"({'moderate congestion' if dest_port['dhl_index'] > 60 else 'minimal congestion'}).",
+                f"Import origin port: {origin_port_name} — DHL Logistics Performance Index {origin_dhl}/100 "
+                f"({'high congestion' if origin_dhl > 70 else 'moderate congestion' if origin_dhl > 60 else 'minimal congestion'}).",
+                f"Destination port: {dest_port_name} — DHL index {_SANTOS_DHL_INDEX}/100.",
                 f"Estimated total transit time: {transit_days} days from {origin} to Porto de Santos.",
             ]
             if commodity.lower() in ("fruits", "fruit"):
                 findings.append("Perishable commodity — cold chain and transit time are critical for import quality compliance.")
 
             recommendations = [
-                f"Book container slots at {origin_port['name']} at least 21 days in advance.",
+                f"Book container slots at {origin_port_name} at least 21 days in advance.",
                 "Obtain Brazilian import license (LI) via SISCOMEX before shipment.",
                 "Engage a licensed customs broker (despachante aduaneiro) for clearance at Santos.",
             ]
-            if sea_days > 20:
+            if transit_days > 25:
                 recommendations.append(
-                    f"Consider air freight for time-sensitive volumes — sea transit from {origin} is ~{sea_days} days."
+                    f"Long transit (~{transit_days} days) — build adequate safety stock and consider split shipments."
                 )
 
         else:
@@ -143,11 +135,18 @@ class LogisticsAgent:
                     f"Consider alternative routing via Rotterdam (DHL Index 45) to reduce port congestion risk."
                 )
 
+        if is_import:
+            op_name = origin_port_name
+            dp_name = dest_port_name
+        else:
+            op_name = origin_port["name"]
+            dp_name = dest_port["name"]
+
         return {
             "logistics_risk_score":   score,
             "risk_level":             _risk_level(score),
-            "origin_port":            origin_port["name"],
-            "destination_port":       dest_port["name"],
+            "origin_port":            op_name,
+            "destination_port":       dp_name,
             "estimated_transit_days": transit_days,
             "findings":               findings,
             "recommendations":        recommendations,

@@ -90,10 +90,43 @@ class RegulatoryAgent:
         )
 
         if is_import:
+            if origin in ("United States", "USA"):
+                origin_context = (
+                    "Focus on: USDA APHIS phytosanitary certificates, FDA FSMA compliance, "
+                    "FSMA Prior Notice requirements (8h before sea arrival), no FTA with Brazil "
+                    "(standard WTO rates apply), anti-dumping risk assessment, USD/BRL exchange rate risk."
+                )
+            elif origin == "China":
+                origin_context = (
+                    "Focus on: GACC registration and CIQ inspection certificates, higher Brazilian "
+                    "customs scrutiny for Chinese goods (canal vermelho risk), anti-dumping duties risk "
+                    "(check CAMEX resolutions), ANVISA registration for processed foods, "
+                    "geopolitical supply chain risk, port congestion in Shanghai/Qingdao."
+                )
+            elif origin in ("European Union", "Germany", "Netherlands", "France"):
+                origin_context = (
+                    "Focus on: EU phytosanitary standards (among highest in world — generally satisfy MAPA), "
+                    "Mercosul-EU agreement status (under ratification — may reduce tariffs when in force), "
+                    "MAPA/ANVISA entry requirements, generally lower risk origin with established trade flows."
+                )
+            elif origin in ("Argentina", "Colombia", "Peru", "Chile"):
+                origin_context = (
+                    "Focus on: Mercosul/trade agreement benefits — Argentina is Mercosul member (zero/reduced II), "
+                    "Colombia/Peru/Chile under ACE ALADI agreements (preferential tariffs), "
+                    "MAPA phytosanitary requirements still apply, shorter transit times reduce logistics risk, "
+                    "currency considerations (ARS/BRL, COP/BRL volatility)."
+                )
+            else:
+                origin_context = (
+                    "Analyze general Brazilian import requirements including ANVISA/MAPA compliance, "
+                    "SISCOMEX process, LI/DI documentation, NCM classification, and applicable trade agreements."
+                )
+
             user_message = (
                 f"Commodity: {commodity}\n"
                 f"Origin country (where Brazil imports FROM): {origin}\n"
                 f"Destination: Brazil\n"
+                f"Origin-specific context: {origin_context}\n"
                 f"Import compliance query: {query}\n\n"
                 f"Relevant regulatory context:\n\n{context_blocks}"
             )
