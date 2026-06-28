@@ -2,26 +2,39 @@ import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
 
-export type Focus   = 'regulatory' | 'climate' | 'market' | 'composite';
-export type Horizon = '30' | '90' | '365';
+export type Focus          = 'regulatory' | 'climate' | 'market' | 'composite';
+export type Horizon        = '30' | '90' | '365';
+export type TradeDirection = 'export' | 'import';
 
 export interface LandingParams {
   commodity: string;
   focus: Focus;
   horizon: Horizon;
   query: string;
+  destination: string;
+  trade_direction: TradeDirection;
 }
 
 interface Props {
   onAnalyze: (params: LandingParams) => void;
 }
 
-const AMBER    = '#D4900A';
-const BG       = '#0B1120';
-const SURFACE  = '#131C2E';
-const BORDER   = '#1E2D45';
-const TEXT     = '#F1F5F9';
+const AMBER      = '#D4900A';
+const BG         = '#0B1120';
+const SURFACE    = '#131C2E';
+const BORDER     = '#1E2D45';
+const TEXT       = '#F1F5F9';
 const TEXT_MUTED = '#7A90A8';
+
+const DESTINATIONS = [
+  'European Union',
+  'Germany',
+  'Netherlands',
+  'France',
+  'Norway',
+  'Switzerland',
+  'United Kingdom',
+];
 
 const FOCUS_OPTIONS: { value: Focus; label: string }[] = [
   { value: 'regulatory', label: 'Regulatory' },
@@ -77,17 +90,28 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase', fontFamily: 'ui-monospace, Consolas, monospace',
 };
 
+const selectStyle: React.CSSProperties = {
+  width: '100%', background: SURFACE, border: `1px solid ${BORDER}`,
+  borderRadius: 6, color: TEXT, fontSize: 14,
+  padding: '10px 12px', outline: 'none',
+  boxSizing: 'border-box', cursor: 'pointer',
+};
+
 export default function LandingScreen({ onAnalyze }: Props) {
-  const [commodity, setCommodity] = useState('coffee');
-  const [focus,     setFocus]     = useState<Focus>('composite');
-  const [horizon,   setHorizon]   = useState<Horizon>('90');
-  const [query,     setQuery]     = useState('');
+  const [commodity,       setCommodity]       = useState('coffee');
+  const [destination,     setDestination]     = useState('European Union');
+  const [focus,           setFocus]           = useState<Focus>('composite');
+  const [horizon,         setHorizon]         = useState<Horizon>('90');
+  const [query,           setQuery]           = useState('');
+  const [tradeDirection,  setTradeDirection]  = useState<TradeDirection>('export');
   const { t } = useLanguage();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onAnalyze({ commodity, focus, horizon, query });
+    onAnalyze({ commodity, focus, horizon, query, destination, trade_direction: tradeDirection });
   }
+
+  const nonEU = ['Norway', 'Switzerland', 'United Kingdom'].includes(destination);
 
   return (
     <div style={{
@@ -117,25 +141,17 @@ export default function LandingScreen({ onAnalyze }: Props) {
 
       {/* Form */}
       <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 22 }}>
+
         {/* Commodity */}
         <div>
           <label style={labelStyle}>{t('commodity_label')}</label>
-          <select
-            value={commodity}
-            onChange={e => setCommodity(e.target.value)}
-            style={{
-              width: '100%', background: SURFACE, border: `1px solid ${BORDER}`,
-              borderRadius: 6, color: TEXT, fontSize: 14,
-              padding: '10px 12px', outline: 'none',
-              boxSizing: 'border-box' as const, cursor: 'pointer',
-            }}
-          >
+          <select value={commodity} onChange={e => setCommodity(e.target.value)} style={selectStyle}>
             <option value="coffee">Coffee</option>
             <option value="fruits">Fruits</option>
           </select>
         </div>
 
-        {/* Origin / Destination tags */}
+        {/* Origin / Destination */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <label style={labelStyle}>{t('origin_label')}</label>
@@ -148,12 +164,71 @@ export default function LandingScreen({ onAnalyze }: Props) {
           </div>
           <div>
             <label style={labelStyle}>{t('destination_label')}</label>
-            <div style={{
-              background: '#0A1628', border: `1px solid ${AMBER}44`,
-              borderRadius: 6, color: AMBER, fontSize: 13,
-              padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
-              fontWeight: 600, letterSpacing: 0.5,
-            }}>⬡ European Union</div>
+            <select
+              value={destination}
+              onChange={e => setDestination(e.target.value)}
+              style={{
+                ...selectStyle,
+                color: AMBER,
+                background: '#0A1628',
+                border: `1px solid ${AMBER}44`,
+                fontFamily: 'ui-monospace, Consolas, monospace',
+                fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
+              }}
+            >
+              {DESTINATIONS.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Non-EU notice */}
+        {nonEU && (
+          <div style={{
+            background: '#1A1400', border: '1px solid #D4900A44',
+            borderRadius: 6, padding: '10px 14px',
+            fontSize: 11, color: TEXT_MUTED, lineHeight: 1.6,
+            fontFamily: 'ui-monospace, Consolas, monospace',
+          }}>
+            ⚠ {destination} is outside the EU — EUDR does not apply directly.
+            Bilateral agreements and equivalent national legislation will be assessed.
+          </div>
+        )}
+
+        {/* Trade Direction */}
+        <div>
+          <label style={labelStyle}>Trade Direction</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['export', 'import'] as TradeDirection[]).map(dir => {
+              const active = tradeDirection === dir;
+              return (
+                <button
+                  key={dir}
+                  type="button"
+                  onClick={() => setTradeDirection(dir)}
+                  style={{
+                    flex: 1, padding: '8px 16px',
+                    fontSize: 11, fontWeight: 700, letterSpacing: 1,
+                    fontFamily: 'ui-monospace, Consolas, monospace',
+                    background: active ? AMBER : 'transparent',
+                    color: active ? '#000' : TEXT_MUTED,
+                    border: `1px solid ${active ? AMBER : BORDER}`,
+                    borderRadius: 4, cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    textTransform: 'uppercase' as const,
+                  }}
+                >
+                  {active ? '● ' : '○ '}
+                  {dir === 'export' ? 'Export' : 'Import'}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', lineHeight: 1.6 }}>
+            {tradeDirection === 'export'
+              ? 'Brazilian exporter assessing risk of shipping to Europe'
+              : 'European buyer assessing which Brazilian region to source from'}
           </div>
         </div>
 

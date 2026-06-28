@@ -4,6 +4,7 @@ export interface AnalyzeRequest {
   origin: string;
   destination: string;
   origin_region?: string;
+  trade_direction?: 'export' | 'import';
 }
 
 export interface RegulationResult {
@@ -91,6 +92,8 @@ export interface AnalyzeResponse {
   executive: ExecutiveResult;
   overall_risk_score: number;
   export_readiness: number;
+  supply_reliability?: number;
+  trade_direction?: 'export' | 'import';
   // flat fields for backwards compatibility
   risk_score: number;
   risk_level: string;

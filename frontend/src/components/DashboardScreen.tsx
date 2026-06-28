@@ -90,20 +90,24 @@ interface Props {
   result: AnalyzeResponse;
   commodity: string;
   horizon: string;
+  destination: string;
+  tradeDirection: 'export' | 'import';
   onNewAnalysis: () => void;
 }
 
-export default function DashboardScreen({ result, commodity, horizon, onNewAnalysis }: Props) {
+export default function DashboardScreen({ result, commodity, horizon, destination, tradeDirection, onNewAnalysis }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('analysis');
   const { t } = useLanguage();
+  const isImport = tradeDirection === 'import';
 
   async function handleAnalyzeRegion(regionName: string) {
     const data = await analyzeRoute({
       query: `Trade risk assessment for ${regionName} region`,
       commodity,
       origin: 'Brazil',
-      destination: 'European Union',
+      destination,
       origin_region: regionName,
+      trade_direction: tradeDirection,
     });
     return {
       regulatory: data.regulatory.risk_score,
@@ -344,7 +348,8 @@ export default function DashboardScreen({ result, commodity, horizon, onNewAnaly
               fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
               fontFamily: 'ui-monospace, Consolas, monospace',
             }}>
-              {commodity.toUpperCase()} · BRAZIL → EUROPEAN UNION · {horizon} DAYS
+              {commodity.toUpperCase()} · BRAZIL → {destination.toUpperCase()} · {horizon} DAYS
+              {isImport && <span style={{ color: AMBER, marginLeft: 8 }}>· IMPORT</span>}
             </span>
             <LangToggle />
             <span style={{
@@ -371,11 +376,11 @@ export default function DashboardScreen({ result, commodity, horizon, onNewAnaly
               {/* ── 3 Metric cards ── */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                 <MetricCard
-                  label={t('export_readiness')}
-                  value={String(readiness)}
+                  label={isImport ? 'SUPPLY RELIABILITY' : t('export_readiness')}
+                  value={String(isImport ? (result.supply_reliability ?? readiness) : readiness)}
                   unit="/100"
                   color={readiness >= 70 ? '#34D399' : readiness >= 40 ? '#FBBF24' : '#F87171'}
-                  sub={`Risk score: ${score}/100`}
+                  sub={isImport ? 'Buyer reliability score' : `Risk score: ${score}/100`}
                 />
                 <MetricCard
                   label={t('market_risk')}

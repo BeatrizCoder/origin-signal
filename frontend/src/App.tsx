@@ -9,28 +9,33 @@ import DashboardScreen from './components/DashboardScreen';
 type Screen = 'landing' | 'processing' | 'dashboard';
 
 export default function App() {
-  const [screen,    setScreen]    = useState<Screen>('landing');
-  const [commodity, setCommodity] = useState('coffee');
-  const [horizon,   setHorizon]   = useState('90');
-  const [result,    setResult]    = useState<AnalyzeResponse | null>(null);
-  const [error,     setError]     = useState<string | null>(null);
+  const [screen,         setScreen]         = useState<Screen>('landing');
+  const [commodity,      setCommodity]      = useState('coffee');
+  const [horizon,        setHorizon]        = useState('90');
+  const [destination,    setDestination]    = useState('European Union');
+  const [tradeDirection, setTradeDirection] = useState<'export' | 'import'>('export');
+  const [result,         setResult]         = useState<AnalyzeResponse | null>(null);
+  const [error,          setError]          = useState<string | null>(null);
 
-  async function handleAnalyze({ commodity: c, focus, horizon: h, query }: LandingParams) {
+  async function handleAnalyze({ commodity: c, focus, horizon: h, query, destination: dest, trade_direction: td }: LandingParams) {
     setCommodity(c);
     setHorizon(h);
+    setDestination(dest);
+    setTradeDirection(td);
     setError(null);
     setResult(null);
     setScreen('processing');
 
     const queryText = query.trim() ||
-      `Analyze ${focus} risk for ${c} exports from Brazil to the European Union over ${h} days`;
+      `Analyze ${focus} risk for ${c} ${td === 'import' ? 'imports from Brazil to' : 'exports from Brazil to'} ${dest} over ${h} days`;
 
     const apiCall = analyzeRoute({
       query: queryText,
       commodity: c,
       origin: 'Brazil',
-      destination: 'European Union',
+      destination: dest,
       origin_region: 'Cerrado Mineiro',
+      trade_direction: td,
     });
 
     const timeout = new Promise<never>((_, reject) =>
@@ -62,6 +67,8 @@ export default function App() {
         result={result}
         commodity={commodity}
         horizon={horizon}
+        destination={destination}
+        tradeDirection={tradeDirection}
         onNewAnalysis={() => setScreen('landing')}
       />
     );

@@ -31,6 +31,7 @@ Guidelines:
 - articles_cited: cite exact article numbers from the EUDR text when referenced
 - recommendations: 2-4 actionable steps for compliance
 - CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals (e.g. "Recital 49", "Recital 12")
+- Non-EU destinations (Norway, Switzerland, United Kingdom): EUDR 2023/1115 does not apply directly. However, mention equivalent bilateral agreements or national legislation in findings (e.g. Norway via EEA agreement, Switzerland bilateral MRA, UK via UKDR equivalent under development). Adjust risk_score downward by 10-15 points vs. equivalent EU destination, but note the bilateral compliance requirements.
 """
 
 

@@ -7,20 +7,26 @@ ORIGIN_PORTS: dict[str, dict] = {
 
 # Sea transit days from Santos per destination (port-to-port, realistic ocean freight)
 _SEA_DAYS: dict[str, int] = {
-    "Hamburg":    25,  # Santos → Hamburg ≈ 25 days sailing
-    "Rotterdam":  22,  # Santos → Rotterdam ≈ 22 days sailing
-    "Antuérpia":  23,  # Santos → Antwerp ≈ 23 days sailing
-    "Le Havre":   20,
-    "Genoa":      18,
+    "Hamburg":      25,  # Santos → Hamburg ≈ 25 days
+    "Rotterdam":    22,  # Santos → Rotterdam ≈ 22 days
+    "Antuérpia":    23,  # Santos → Antwerp ≈ 23 days
+    "Le Havre":     26,  # Santos → Le Havre ≈ 26 days
+    "Genoa":        18,
+    "Oslo":         29,  # Santos → Oslo ≈ 29 days (via North Sea)
+    "Felixstowe":   23,  # Santos → Felixstowe (UK) ≈ 23 days
+    "Zurich":       25,  # Santos → Rotterdam + 3 days inland to Zurich
 }
 
 DESTINATION_PORTS: dict[str, dict] = {
-    "Germany":        {"name": "Hamburg",   "dhl_index": 62, "handling_days": 3},
-    "European Union": {"name": "Hamburg",   "dhl_index": 62, "handling_days": 3},
-    "Netherlands":    {"name": "Rotterdam", "dhl_index": 45, "handling_days": 3},
-    "Belgium":        {"name": "Antuérpia", "dhl_index": 48, "handling_days": 3},
-    "France":         {"name": "Le Havre",  "dhl_index": 55, "handling_days": 3},
-    "Italy":          {"name": "Genoa",     "dhl_index": 58, "handling_days": 3},
+    "Germany":        {"name": "Hamburg",    "dhl_index": 62, "handling_days": 3},
+    "European Union": {"name": "Hamburg",    "dhl_index": 62, "handling_days": 3},
+    "Netherlands":    {"name": "Rotterdam",  "dhl_index": 45, "handling_days": 3},
+    "Belgium":        {"name": "Antuérpia",  "dhl_index": 48, "handling_days": 3},
+    "France":         {"name": "Le Havre",   "dhl_index": 52, "handling_days": 3},
+    "Italy":          {"name": "Genoa",      "dhl_index": 58, "handling_days": 3},
+    "Norway":         {"name": "Oslo",       "dhl_index": 38, "handling_days": 3},
+    "Switzerland":    {"name": "Zurich",     "dhl_index": 41, "handling_days": 6},
+    "United Kingdom": {"name": "Felixstowe", "dhl_index": 55, "handling_days": 3},
 }
 
 _DEST_HANDLING_DAYS = 3

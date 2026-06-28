@@ -5,9 +5,9 @@ import anthropic
 
 from app.core.config import settings
 
-_SYSTEM_PROMPT = """\
-You are a C-suite trade intelligence advisor for Brazilian agricultural exports to the EU.
-You have received 5 specialist agent reports. Write a concise executive briefing.
+_SYSTEM_PROMPT_EXPORT = """\
+You are a C-suite trade intelligence advisor for a Brazilian agricultural exporter selling to the EU.
+You have received 5 specialist agent reports. Write a concise executive briefing from the EXPORTER perspective.
 
 Respond ONLY with a valid JSON object — no markdown, no extra text.
 
@@ -28,14 +28,46 @@ Required schema:
   "overall_verdict": "Go|Caution|Hold"
 }
 
-Guidelines for recommended_actions timelines:
-- If gap_agent contains action_timeline.gps_mapping_days, use that exact number of days for GPS-related actions.
+Guidelines:
+- Focus on risks and actions for the Brazilian exporter: EUDR compliance, logistics reliability, price risk.
+- If gap_agent contains action_timeline.gps_mapping_days, use that exact number for GPS actions.
 - If gap_agent contains action_timeline.documentation_days, use that exact number for documentation actions.
-- These are calculated from actual coverage gaps — cite them specifically (e.g. "11 days of drone mapping required").
-- All timelines must be concrete and derived from the agent data, not generic.
+- All timelines must be concrete and derived from agent data, not generic.
+- CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals.
 """
 
-_MOCK = {
+_SYSTEM_PROMPT_IMPORT = """\
+You are a C-suite trade intelligence advisor for a European buyer sourcing Brazilian agricultural commodities.
+You have received 5 specialist agent reports. Write a concise executive briefing from the BUYER perspective.
+
+Respond ONLY with a valid JSON object — no markdown, no extra text.
+
+Required schema:
+{
+  "executive_summary": "<2-3 sentences on Supply Reliability — which Brazilian regions offer the safest, most compliant supply>",
+  "key_risks": [
+    { "title": "<short title>", "description": "<1-2 sentences>", "severity": "critical|high|medium" },
+    { "title": "...", "description": "...", "severity": "..." },
+    { "title": "...", "description": "...", "severity": "..." }
+  ],
+  "recommended_actions": [
+    { "action": "<concrete sourcing or due-diligence action>", "priority": "high|medium|low", "timeline": "<e.g. 30 days>" },
+    { "action": "...", "priority": "...", "timeline": "..." },
+    { "action": "...", "priority": "...", "timeline": "..." }
+  ],
+  "trade_window": "<best sourcing window, e.g. 'Q3 2025 — post-harvest, ample supply, stable freight'>",
+  "overall_verdict": "Go|Caution|Hold"
+}
+
+Guidelines:
+- Focus on Supply Reliability for the European buyer: supplier traceability, deforestation-free certification, logistics dependability.
+- Frame key_risks as supply disruption risks (not exporter compliance tasks).
+- recommended_actions should address buyer due-diligence: audit scheduling, dual sourcing, contract terms.
+- overall_verdict reflects whether the buyer should proceed with sourcing now.
+- CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals.
+"""
+
+_MOCK_EXPORT = {
     "executive_summary": (
         "Coffee exports from Brazil to the EU face moderate regulatory and compliance risk driven primarily "
         "by EUDR documentation gaps. Climate conditions are within acceptable range; market fundamentals "
@@ -63,12 +95,12 @@ _MOCK = {
         {
             "action": "Initiate GPS plot mapping and deforestation certification immediately.",
             "priority": "high",
-            "timeline": "30 days",
+            "timeline": "11 days",
         },
         {
             "action": "Pre-register due diligence statement on EU TRACES system before shipment.",
             "priority": "high",
-            "timeline": "60 days",
+            "timeline": "45 days",
         },
         {
             "action": "Evaluate Rotterdam as alternative destination port to reduce logistics risk.",
@@ -77,6 +109,51 @@ _MOCK = {
         },
     ],
     "trade_window": "Q3 2025 — post-harvest window with stable freight rates",
+    "overall_verdict": "Caution",
+}
+
+_MOCK_IMPORT = {
+    "executive_summary": (
+        "Brazilian coffee supply presents moderate reliability risk for European buyers, driven by incomplete "
+        "EUDR traceability documentation across key producing regions. Sul de Minas and Cerrado Mineiro offer "
+        "the strongest compliance baseline. Buyers should require GPS-verified supply chain data before "
+        "contracting volumes for H2 delivery."
+    ),
+    "key_risks": [
+        {
+            "title": "Traceability Gap — High Volume Regions",
+            "description": "GPS plot-level data covers only 70% of sourced area, creating customs clearance risk for EU importers under EUDR Article 4.",
+            "severity": "critical",
+        },
+        {
+            "title": "Deforestation Certificate Absence",
+            "description": "Key suppliers lack Rainforest Alliance or 4C deforestation-free certificates required for EU market entry.",
+            "severity": "high",
+        },
+        {
+            "title": "Single-Port Dependency",
+            "description": "Heavy reliance on Santos creates supply concentration risk; port disruptions could delay delivery by 7-14 days.",
+            "severity": "medium",
+        },
+    ],
+    "recommended_actions": [
+        {
+            "action": "Require GPS-verified plot data from all contracted suppliers before signing H2 purchase agreements.",
+            "priority": "high",
+            "timeline": "30 days",
+        },
+        {
+            "action": "Dual-source across Sul de Minas and Cerrado Mineiro to reduce single-region climate exposure.",
+            "priority": "high",
+            "timeline": "60 days",
+        },
+        {
+            "action": "Insert EUDR compliance clause with audit rights into supply contracts.",
+            "priority": "medium",
+            "timeline": "Next contract renewal",
+        },
+    ],
+    "trade_window": "Q3 2025 — post-harvest, ample supply, competitive pricing",
     "overall_verdict": "Caution",
 }
 
@@ -99,14 +176,20 @@ class ExecutiveAgent:
         query: str,
         commodity: str,
         destination: str,
+        trade_direction: str = "export",
     ) -> dict:
+        is_import = trade_direction == "import"
+
         if self._client is None:
-            return _MOCK.copy()
+            return (_MOCK_IMPORT if is_import else _MOCK_EXPORT).copy()
+
+        system_prompt = _SYSTEM_PROMPT_IMPORT if is_import else _SYSTEM_PROMPT_EXPORT
 
         context = json.dumps({
             "query": query,
             "commodity": commodity,
             "destination": destination,
+            "trade_direction": trade_direction,
             "regulatory_agent": regulatory,
             "climate_agent":    climate,
             "market_agent":     market,
@@ -117,7 +200,7 @@ class ExecutiveAgent:
         response = self._client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
-            system=_SYSTEM_PROMPT,
+            system=system_prompt,
             messages=[{"role": "user", "content": f"Agent reports:\n\n{context}"}],
         )
 

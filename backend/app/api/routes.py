@@ -32,6 +32,7 @@ class AnalyzeRequest(BaseModel):
     origin: str
     destination: str
     origin_region: str = "Cerrado Mineiro"
+    trade_direction: str = "export"
 
 
 @router.get("/health")
@@ -55,7 +56,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
     # Phase 2: gap (uses reg) + executive (uses all) in parallel
     gap, executive = await asyncio.gather(
         _gap.analyze(reg, body.commodity),
-        _executive.synthesize(reg, clim, mkt, logi, {}, body.query, body.commodity, body.destination),
+        _executive.synthesize(reg, clim, mkt, logi, {}, body.query, body.commodity, body.destination, body.trade_direction),
     )
 
     overall = max(0, min(100, round(
@@ -75,6 +76,8 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "executive":          executive,
         "overall_risk_score": overall,
         "export_readiness":   100 - overall,
+        "supply_reliability": 100 - overall,
+        "trade_direction":    body.trade_direction,
         # flat fields for frontend compatibility
         "risk_score":         overall,
         "risk_level":         _risk_level(overall),
