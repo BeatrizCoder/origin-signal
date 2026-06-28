@@ -90,12 +90,13 @@ interface Props {
   result: AnalyzeResponse;
   commodity: string;
   horizon: string;
+  origin: string;
   destination: string;
   tradeDirection: 'export' | 'import';
   onNewAnalysis: () => void;
 }
 
-export default function DashboardScreen({ result, commodity, horizon, destination, tradeDirection, onNewAnalysis }: Props) {
+export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('analysis');
   const { t } = useLanguage();
   const isImport = tradeDirection === 'import';
@@ -216,7 +217,7 @@ export default function DashboardScreen({ result, commodity, horizon, destinatio
             </div>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
               <Tag>{commodity.toUpperCase()}</Tag>
-              <Tag>BR→EU</Tag>
+              <Tag>{isImport ? `${origin.slice(0, 2).toUpperCase()}→BR` : `BR→${destination.slice(0, 2).toUpperCase()}`}</Tag>
               <Tag>{horizon}D</Tag>
             </div>
           </div>
@@ -348,7 +349,7 @@ export default function DashboardScreen({ result, commodity, horizon, destinatio
               fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
               fontFamily: 'ui-monospace, Consolas, monospace',
             }}>
-              {commodity.toUpperCase()} · BRAZIL → {destination.toUpperCase()} · {horizon} DAYS
+              {commodity.toUpperCase()} · {isImport ? `${origin.toUpperCase()} → BRAZIL` : `BRAZIL → ${destination.toUpperCase()}`} · {horizon} DAYS
               {isImport && <span style={{ color: AMBER, marginLeft: 8 }}>· IMPORT</span>}
             </span>
             <LangToggle />
@@ -368,7 +369,7 @@ export default function DashboardScreen({ result, commodity, horizon, destinatio
           padding:   activeTab === 'map' ? 0 : '24px 28px 60px',
         }}>
 
-          {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} />}
+          {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} />}
 
           {activeTab === 'analysis' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 820 }}>
@@ -421,7 +422,9 @@ export default function DashboardScreen({ result, commodity, horizon, destinatio
                       fontSize: 13, fontWeight: 700, color: TEXT,
                       fontFamily: 'ui-monospace, Consolas, monospace',
                     }}>{originPort}</div>
-                    <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 3 }}>Brazil</div>
+                    <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 3 }}>
+                      {isImport ? origin : 'Brazil'}
+                    </div>
                   </div>
 
                   {/* Connecting line */}
@@ -454,7 +457,9 @@ export default function DashboardScreen({ result, commodity, horizon, destinatio
                       fontSize: 13, fontWeight: 700, color: TEXT,
                       fontFamily: 'ui-monospace, Consolas, monospace',
                     }}>{destPort}</div>
-                    <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 3 }}>European Union</div>
+                    <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 3 }}>
+                      {isImport ? 'Brazil' : destination}
+                    </div>
                   </div>
                 </div>
               </div>

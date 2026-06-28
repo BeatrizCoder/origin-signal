@@ -36,35 +36,36 @@ Guidelines:
 - CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals.
 """
 
-_SYSTEM_PROMPT_IMPORT = """\
-You are a C-suite trade intelligence advisor for a European buyer sourcing Brazilian agricultural commodities.
-You have received 5 specialist agent reports. Write a concise executive briefing from the BUYER perspective.
+def _build_import_prompt(origin: str) -> str:
+    return f"""\
+You are a C-suite trade intelligence advisor for a Brazilian company that wants to IMPORT this commodity FROM {origin} INTO Brazil.
+You have received 5 specialist agent reports. Write a concise executive briefing from the IMPORTER perspective.
 
 Respond ONLY with a valid JSON object — no markdown, no extra text.
 
 Required schema:
-{
-  "executive_summary": "<2-3 sentences on Supply Reliability — which Brazilian regions offer the safest, most compliant supply>",
+{{
+  "executive_summary": "<2-3 sentences synthesizing the overall import risk situation from {origin} into Brazil>",
   "key_risks": [
-    { "title": "<short title>", "description": "<1-2 sentences>", "severity": "critical|high|medium" },
-    { "title": "...", "description": "...", "severity": "..." },
-    { "title": "...", "description": "...", "severity": "..." }
+    {{ "title": "<short title>", "description": "<1-2 sentences>", "severity": "critical|high|medium" }},
+    {{ "title": "...", "description": "...", "severity": "..." }},
+    {{ "title": "...", "description": "...", "severity": "..." }}
   ],
   "recommended_actions": [
-    { "action": "<concrete sourcing or due-diligence action>", "priority": "high|medium|low", "timeline": "<e.g. 30 days>" },
-    { "action": "...", "priority": "...", "timeline": "..." },
-    { "action": "...", "priority": "...", "timeline": "..." }
+    {{ "action": "<concrete action>", "priority": "high|medium|low", "timeline": "<e.g. 30 days>" }},
+    {{ "action": "...", "priority": "...", "timeline": "..." }},
+    {{ "action": "...", "priority": "...", "timeline": "..." }}
   ],
-  "trade_window": "<best sourcing window, e.g. 'Q3 2025 — post-harvest, ample supply, stable freight'>",
+  "trade_window": "<best period to import, e.g. 'Q3 2025 — post-harvest in {origin}, competitive pricing'>",
   "overall_verdict": "Go|Caution|Hold"
-}
+}}
 
 Guidelines:
-- Focus on Supply Reliability for the European buyer: supplier traceability, deforestation-free certification, logistics dependability.
-- Frame key_risks as supply disruption risks (not exporter compliance tasks).
-- recommended_actions should address buyer due-diligence: audit scheduling, dual sourcing, contract terms.
-- overall_verdict reflects whether the buyer should proceed with sourcing now.
-- CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals.
+- Focus on the perspective of the Brazilian importer sourcing from {origin}.
+- Address: Brazilian import regulations (ANVISA, MAPA if applicable), import tariffs and tax burden (II, IPI, PIS/COFINS, ICMS), supply reliability of {origin}, logistics from {origin} to Brazilian ports (Porto de Santos), and any trade agreements between Brazil and {origin} (e.g. Mercosur, bilateral).
+- Frame key_risks as import barriers, supply disruption from {origin}, and Brazilian regulatory compliance risks.
+- recommended_actions should address import licensing, tariff planning, supplier qualification in {origin}, and logistics contracts.
+- overall_verdict reflects whether the Brazilian company should proceed with importing from {origin} now.
 """
 
 _MOCK_EXPORT = {
@@ -177,13 +178,14 @@ class ExecutiveAgent:
         commodity: str,
         destination: str,
         trade_direction: str = "export",
+        origin: str = "Brazil",
     ) -> dict:
         is_import = trade_direction == "import"
 
         if self._client is None:
             return (_MOCK_IMPORT if is_import else _MOCK_EXPORT).copy()
 
-        system_prompt = _SYSTEM_PROMPT_IMPORT if is_import else _SYSTEM_PROMPT_EXPORT
+        system_prompt = _build_import_prompt(origin) if is_import else _SYSTEM_PROMPT_EXPORT
 
         context = json.dumps({
             "query": query,
@@ -199,7 +201,7 @@ class ExecutiveAgent:
 
         response = self._client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=1024,
+            max_tokens=2048,
             system=system_prompt,
             messages=[{"role": "user", "content": f"Agent reports:\n\n{context}"}],
         )

@@ -42,21 +42,29 @@ async def health():
 
 @router.post("/analyze")
 async def analyze(body: AnalyzeRequest) -> dict:
+    is_import = body.trade_direction == "import"
+
+    # For import: analyze climate at origin country; for export: analyze Brazilian origin region
+    climate_location = body.origin if is_import else body.origin_region
+
     # Phase 1: 4 independent agents in parallel
     reg, clim, mkt, logi = await asyncio.gather(
         asyncio.to_thread(
             _regulatory.analyze,
-            body.query, body.commodity, body.origin, body.destination,
+            body.query, body.commodity, body.origin, body.destination, body.trade_direction,
         ),
-        _climate.analyze(body.origin_region, body.commodity),
+        _climate.analyze(climate_location, body.commodity, is_import),
         _market.analyze(body.commodity, body.destination),
-        _logistics.analyze(body.origin, body.destination, body.commodity),
+        _logistics.analyze(body.origin, body.destination, body.commodity, body.trade_direction),
     )
 
     # Phase 2: gap (uses reg) + executive (uses all) in parallel
     gap, executive = await asyncio.gather(
         _gap.analyze(reg, body.commodity),
-        _executive.synthesize(reg, clim, mkt, logi, {}, body.query, body.commodity, body.destination, body.trade_direction),
+        _executive.synthesize(
+            reg, clim, mkt, logi, {}, body.query, body.commodity,
+            body.destination, body.trade_direction, body.origin,
+        ),
     )
 
     overall = max(0, min(100, round(

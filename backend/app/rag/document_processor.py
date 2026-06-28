@@ -3,6 +3,33 @@ from pathlib import Path
 
 import PyPDF2
 
+SECTION_RE = re.compile(r'^#{1,3}\s+', re.MULTILINE)
+
+
+def load_and_chunk_markdown(md_path: str) -> list[dict]:
+    path = Path(md_path)
+    text = path.read_text(encoding='utf-8')
+    source = path.name
+
+    # Split on headings (## or ###)
+    sections = SECTION_RE.split(text)
+    sections = [s.strip() for s in sections if s.strip()]
+
+    chunks: list[dict] = []
+    for section in sections:
+        sub_chunks = _split_into_sub_chunks(section, CHUNK_SIZE, OVERLAP)
+        for i, sub in enumerate(sub_chunks):
+            if not sub.strip():
+                continue
+            chunks.append({
+                'text': sub.strip(),
+                'source': source,
+                'article_number': '',
+                'chunk_type': 'guide',
+                'sub_index': i,
+            })
+    return chunks
+
 
 CHUNK_SIZE = 2000   # ~500 tokens
 OVERLAP = 200       # ~50 tokens

@@ -9,7 +9,7 @@ from app.rag.vector_store import EUDRVectorStore
 
 CHROMA_DIR = str(Path(__file__).parents[3] / "backend" / "data" / "chroma_db")
 
-_SYSTEM_PROMPT = """\
+_SYSTEM_PROMPT_EXPORT = """\
 You are a regulatory compliance expert specialized in EU Deforestation Regulation (EUDR 2023/1115).
 Analyze the provided regulatory context and answer the user's compliance query.
 
@@ -32,6 +32,32 @@ Guidelines:
 - recommendations: 2-4 actionable steps for compliance
 - CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals (e.g. "Recital 49", "Recital 12")
 - Non-EU destinations (Norway, Switzerland, United Kingdom): EUDR 2023/1115 does not apply directly. However, mention equivalent bilateral agreements or national legislation in findings (e.g. Norway via EEA agreement, Switzerland bilateral MRA, UK via UKDR equivalent under development). Adjust risk_score downward by 10-15 points vs. equivalent EU destination, but note the bilateral compliance requirements.
+- For soybeans: EUDR applies fully. Key requirements include deforestation-free certification, geolocation of production areas, and due diligence statements. Brazil's Cerrado and Amazon biomes are high-scrutiny areas under Article 36.
+"""
+
+_SYSTEM_PROMPT_IMPORT = """\
+You are a Brazilian import compliance expert. Analyze import requirements for bringing the commodity FROM the origin country INTO Brazil.
+
+Respond ONLY with a valid JSON object — no markdown, no explanation, no extra text.
+
+Required JSON schema:
+{
+  "risk_score": <integer 0-100>,
+  "risk_level": "<Low|Medium|High|Critical>",
+  "findings": ["<string>", ...],
+  "articles_cited": ["<string>", ...],
+  "recommendations": ["<string>", ...]
+}
+
+Guidelines:
+- risk_score MUST be an integer strictly between 0 and 100.
+- risk_score 0-25 → Low, 26-50 → Medium, 51-75 → High, 76-100 → Critical
+- findings: 2-4 specific observations on Brazilian import requirements
+- articles_cited: cite specific Brazilian regulations (e.g. "IN MAPA 36/2020", "RDC ANVISA 204/2017", "Lei 8.078/90") when referenced
+- recommendations: 2-4 actionable steps for the Brazilian importer
+- Focus on: ANVISA/MAPA requirements for the commodity, LI/DI process in SISCOMEX, NCM classification and applicable taxes (II, IPI, PIS/COFINS, ICMS), trade agreements between Brazil and the origin country, and phytosanitary/sanitary requirements.
+- Mention the total estimated tax burden (II + IPI + PIS/COFINS + ICMS) for the commodity.
+- If a trade agreement exists (Mercosul, ACE under ALADI), note the preferential tariff rate.
 """
 
 
@@ -44,8 +70,16 @@ class RegulatoryAgent:
             else None
         )
 
-    def analyze(self, query: str, commodity: str, origin: str, destination: str) -> dict:
-        chunks = self._store.search(query, n_results=5)
+    def analyze(self, query: str, commodity: str, origin: str, destination: str, trade_direction: str = "export") -> dict:
+        is_import = trade_direction == "import"
+        system_prompt = _SYSTEM_PROMPT_IMPORT if is_import else _SYSTEM_PROMPT_EXPORT
+
+        search_query = (
+            f"Brazil import {commodity} from {origin} ANVISA MAPA tariff NCM"
+            if is_import
+            else query
+        )
+        chunks = self._store.search(search_query, n_results=5)
 
         if self._client is None:
             return self._mock_response(query, commodity, origin, destination)
@@ -55,17 +89,26 @@ class RegulatoryAgent:
             for c in chunks
         )
 
-        user_message = (
-            f"Commodity: {commodity}\n"
-            f"Export destination: {destination}\n"
-            f"Compliance query: {query}\n\n"
-            f"Relevant EUDR regulatory context:\n\n{context_blocks}"
-        )
+        if is_import:
+            user_message = (
+                f"Commodity: {commodity}\n"
+                f"Origin country (where Brazil imports FROM): {origin}\n"
+                f"Destination: Brazil\n"
+                f"Import compliance query: {query}\n\n"
+                f"Relevant regulatory context:\n\n{context_blocks}"
+            )
+        else:
+            user_message = (
+                f"Commodity: {commodity}\n"
+                f"Export destination: {destination}\n"
+                f"Compliance query: {query}\n\n"
+                f"Relevant EUDR regulatory context:\n\n{context_blocks}"
+            )
 
         response = self._client.messages.create(
             model="claude-haiku-4-5",
             max_tokens=1024,
-            system=_SYSTEM_PROMPT,
+            system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         )
 

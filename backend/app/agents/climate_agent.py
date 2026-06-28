@@ -16,6 +16,26 @@ REGION_COORDS: dict[str, tuple[float, float]] = {
     "Planalto Sul":       (-27.5, -50.8),
     "Oeste da Bahia":     (-12.2, -44.9),
     "Sul ES":             (-20.6, -41.0),
+    # Soybean producing regions
+    "Mato Grosso":        (-12.6, -55.9),
+    "Mato Grosso do Sul": (-20.4, -54.6),
+    "Paraná":             (-24.7, -51.0),
+    "Rio Grande do Sul":  (-29.7, -53.8),
+    "Goiás":              (-15.9, -49.8),
+    "Bahia Oeste":        (-12.0, -45.0),
+}
+
+COUNTRY_COORDS: dict[str, tuple[float, float]] = {
+    "United States":  (39.5,  -98.0),
+    "China":          (35.0,  105.0),
+    "European Union": (51.0,   10.0),
+    "Germany":        (51.2,   10.4),
+    "Netherlands":    (52.1,    5.3),
+    "France":         (46.2,    2.2),
+    "Argentina":      (-34.6, -58.4),
+    "Colombia":        (4.6,  -74.1),
+    "Peru":            (-9.2, -75.0),
+    "Chile":          (-30.0, -71.0),
 }
 
 _DAILY = "precipitation_sum,temperature_2m_max,temperature_2m_min"
@@ -64,27 +84,28 @@ def _compute_risk(forecast: dict, historical: dict) -> tuple[int, dict]:
     return max(0, min(100, score)), conditions
 
 
-def _build_findings(score: int, conditions: dict, region: str) -> list[str]:
+def _build_findings(score: int, conditions: dict, region: str, is_import: bool = False) -> list[str]:
     findings = []
+    context = f"supply region {region}" if is_import else region
     if conditions["days_above_35c"] > 5:
         findings.append(
-            f"{region} has {conditions['days_above_35c']} days forecast above 35°C in the next 16 days, "
-            "increasing heat stress risk for coffee crops."
+            f"{context} has {conditions['days_above_35c']} days forecast above 35°C in the next 16 days, "
+            f"{'which may affect agricultural output and logistics.' if is_import else 'increasing heat stress risk for coffee crops.'}"
         )
     if conditions["precipitation_forecast"] < 20:
         findings.append(
-            f"Low precipitation forecast ({conditions['precipitation_forecast']} mm over 16 days) "
-            "indicates drought risk that may affect yield and quality."
+            f"Low precipitation forecast ({conditions['precipitation_forecast']} mm over 16 days) in {region} "
+            f"{'may reduce available supply volumes.' if is_import else 'indicates drought risk that may affect yield and quality.'}"
         )
     elif conditions["precipitation_forecast"] > 200:
         findings.append(
-            f"Excessive precipitation forecast ({conditions['precipitation_forecast']} mm) "
-            "raises risk of fungal disease and harvest delays."
+            f"Excessive precipitation forecast ({conditions['precipitation_forecast']} mm) in {region} "
+            f"{'raises risk of harvest delays and logistics disruption.' if is_import else 'raises risk of fungal disease and harvest delays.'}"
         )
     else:
         findings.append(
-            f"Precipitation forecast of {conditions['precipitation_forecast']} mm over 16 days "
-            "is within acceptable range for coffee production."
+            f"Precipitation forecast of {conditions['precipitation_forecast']} mm over 16 days in {region} "
+            "is within acceptable range for agricultural production."
         )
     findings.append(
         f"Average maximum temperature of {conditions['temp_max']}°C forecast "
@@ -93,21 +114,36 @@ def _build_findings(score: int, conditions: dict, region: str) -> list[str]:
     return findings
 
 
-def _build_recommendations(score: int, conditions: dict) -> list[str]:
+def _build_recommendations(score: int, conditions: dict, is_import: bool = False) -> list[str]:
     recs = []
     if conditions["days_above_35c"] > 3:
-        recs.append("Implement shading systems or adjust harvest scheduling to mitigate heat stress impact.")
+        if is_import:
+            recs.append("Monitor supply availability from this origin — heat stress may reduce harvest volumes and delay shipments.")
+        else:
+            recs.append("Implement shading systems or adjust harvest scheduling to mitigate heat stress impact.")
     if conditions["precipitation_forecast"] < 20:
-        recs.append("Activate supplemental irrigation protocols and monitor soil moisture levels closely.")
+        if is_import:
+            recs.append("Assess alternative sourcing options — drought conditions in origin country may constrain supply.")
+        else:
+            recs.append("Activate supplemental irrigation protocols and monitor soil moisture levels closely.")
     if conditions["precipitation_forecast"] > 200:
-        recs.append("Ensure adequate drainage and apply preventive fungicide treatment to protect crop health.")
-    recs.append("Monitor INMET and CPTEC climate bulletins weekly for updated forecasts.")
+        if is_import:
+            recs.append("Build safety stock and plan for potential supply delays due to adverse weather at origin.")
+        else:
+            recs.append("Ensure adequate drainage and apply preventive fungicide treatment to protect crop health.")
+    if is_import:
+        recs.append("Monitor WMO and origin-country meteorological bulletins for updated supply risk signals.")
+    else:
+        recs.append("Monitor INMET and CPTEC climate bulletins weekly for updated forecasts.")
     return recs
 
 
 class ClimateAgent:
-    async def analyze(self, region: str, commodity: str) -> dict:
-        lat, lon = REGION_COORDS.get(region, (-19.1, -46.5))
+    async def analyze(self, region: str, commodity: str, is_import: bool = False) -> dict:
+        if is_import:
+            lat, lon = COUNTRY_COORDS.get(region, (0.0, 0.0))
+        else:
+            lat, lon = REGION_COORDS.get(region, (-19.1, -46.5))
         base_params = {
             "latitude": lat,
             "longitude": lon,
@@ -134,7 +170,7 @@ class ClimateAgent:
             "climate_risk_score": score,
             "risk_level": level,
             "current_conditions": conditions,
-            "findings": _build_findings(score, conditions, region),
-            "recommendations": _build_recommendations(score, conditions),
+            "findings": _build_findings(score, conditions, region, is_import),
+            "recommendations": _build_recommendations(score, conditions, is_import),
             "region_coords": {"lat": lat, "lon": lon},
         }

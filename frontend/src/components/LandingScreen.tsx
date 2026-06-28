@@ -11,6 +11,7 @@ export interface LandingParams {
   focus: Focus;
   horizon: Horizon;
   query: string;
+  origin: string;
   destination: string;
   trade_direction: TradeDirection;
 }
@@ -34,6 +35,19 @@ const DESTINATIONS = [
   'Norway',
   'Switzerland',
   'United Kingdom',
+];
+
+const IMPORT_ORIGINS = [
+  'United States',
+  'China',
+  'European Union',
+  'Germany',
+  'Netherlands',
+  'France',
+  'Argentina',
+  'Colombia',
+  'Peru',
+  'Chile',
 ];
 
 const FOCUS_OPTIONS: { value: Focus; label: string }[] = [
@@ -100,18 +114,25 @@ const selectStyle: React.CSSProperties = {
 export default function LandingScreen({ onAnalyze }: Props) {
   const [commodity,       setCommodity]       = useState('coffee');
   const [destination,     setDestination]     = useState('European Union');
+  const [importOrigin,    setImportOrigin]    = useState('United States');
   const [focus,           setFocus]           = useState<Focus>('composite');
   const [horizon,         setHorizon]         = useState<Horizon>('90');
   const [query,           setQuery]           = useState('');
   const [tradeDirection,  setTradeDirection]  = useState<TradeDirection>('export');
   const { t } = useLanguage();
 
+  const isImport = tradeDirection === 'import';
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onAnalyze({ commodity, focus, horizon, query, destination, trade_direction: tradeDirection });
+    if (isImport) {
+      onAnalyze({ commodity, focus, horizon, query, origin: importOrigin, destination: 'Brazil', trade_direction: tradeDirection });
+    } else {
+      onAnalyze({ commodity, focus, horizon, query, origin: 'Brazil', destination, trade_direction: tradeDirection });
+    }
   }
 
-  const nonEU = ['Norway', 'Switzerland', 'United Kingdom'].includes(destination);
+  const nonEU = !isImport && ['Norway', 'Switzerland', 'United Kingdom'].includes(destination);
 
   return (
     <div style={{
@@ -148,38 +169,67 @@ export default function LandingScreen({ onAnalyze }: Props) {
           <select value={commodity} onChange={e => setCommodity(e.target.value)} style={selectStyle}>
             <option value="coffee">Coffee</option>
             <option value="fruits">Fruits</option>
+            <option value="soybeans">Soybeans</option>
           </select>
         </div>
 
         {/* Origin / Destination */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <label style={labelStyle}>{t('origin_label')}</label>
-            <div style={{
-              background: '#0A1628', border: `1px solid ${AMBER}44`,
-              borderRadius: 6, color: AMBER, fontSize: 13,
-              padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
-              fontWeight: 600, letterSpacing: 0.5,
-            }}>⬡ Brazil</div>
+            <label style={labelStyle}>{isImport ? t('source_country_label') : t('origin_label')}</label>
+            {isImport ? (
+              <select
+                value={importOrigin}
+                onChange={e => setImportOrigin(e.target.value)}
+                style={{
+                  ...selectStyle,
+                  color: AMBER,
+                  background: '#0A1628',
+                  border: `1px solid ${AMBER}44`,
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
+                }}
+              >
+                {IMPORT_ORIGINS.map(o => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+            ) : (
+              <div style={{
+                background: '#0A1628', border: `1px solid ${AMBER}44`,
+                borderRadius: 6, color: AMBER, fontSize: 13,
+                padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
+                fontWeight: 600, letterSpacing: 0.5,
+              }}>⬡ Brazil</div>
+            )}
           </div>
           <div>
             <label style={labelStyle}>{t('destination_label')}</label>
-            <select
-              value={destination}
-              onChange={e => setDestination(e.target.value)}
-              style={{
-                ...selectStyle,
-                color: AMBER,
-                background: '#0A1628',
-                border: `1px solid ${AMBER}44`,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-                fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
-              }}
-            >
-              {DESTINATIONS.map(d => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+            {isImport ? (
+              <div style={{
+                background: '#0A1628', border: `1px solid ${AMBER}44`,
+                borderRadius: 6, color: AMBER, fontSize: 13,
+                padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
+                fontWeight: 600, letterSpacing: 0.5,
+              }}>⬡ Brazil</div>
+            ) : (
+              <select
+                value={destination}
+                onChange={e => setDestination(e.target.value)}
+                style={{
+                  ...selectStyle,
+                  color: AMBER,
+                  background: '#0A1628',
+                  border: `1px solid ${AMBER}44`,
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
+                }}
+              >
+                {DESTINATIONS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -228,7 +278,7 @@ export default function LandingScreen({ onAnalyze }: Props) {
           <div style={{ marginTop: 6, fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', lineHeight: 1.6 }}>
             {tradeDirection === 'export'
               ? 'Brazilian exporter assessing risk of shipping to Europe'
-              : 'European buyer assessing which Brazilian region to source from'}
+              : 'Brazilian importer assessing supply risk and regulatory requirements'}
           </div>
         </div>
 

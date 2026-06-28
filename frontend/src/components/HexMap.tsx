@@ -21,9 +21,10 @@ interface Region {
 
 interface Props {
   onAnalyzeRegion?: (regionName: string) => Promise<RegionScores>;
+  commodity?: string;
 }
 
-const REGIONS: Region[] = [
+const COFFEE_REGIONS: Region[] = [
   { id: 0,  name: 'Rondônia',           col: 0, row: 0, scores: { regulatory: 72, climate: 81, market: 48, logistics: 65 } },
   { id: 1,  name: 'Oeste da Bahia',     col: 2, row: 0, scores: { regulatory: 58, climate: 63, market: 52, logistics: 55 } },
   { id: 2,  name: 'Chapada Diamantina', col: 4, row: 0, scores: { regulatory: 45, climate: 55, market: 38, logistics: 50 } },
@@ -36,6 +37,15 @@ const REGIONS: Region[] = [
   { id: 9,  name: 'Planalto Sul',       col: 0, row: 3, scores: { regulatory: 28, climate: 32, market: 22, logistics: 30 } },
   { id: 10, name: 'Serra Gaúcha',       col: 2, row: 3, scores: { regulatory: 33, climate: 36, market: 28, logistics: 35 } },
   { id: 11, name: 'Mogiana',            col: 4, row: 3, scores: { regulatory: 44, climate: 46, market: 36, logistics: 43 } },
+];
+
+const SOYBEAN_REGIONS: Region[] = [
+  { id: 0, name: 'Mato Grosso',        col: 0, row: 0, scores: { regulatory: 68, climate: 74, market: 42, logistics: 60 } },
+  { id: 1, name: 'Goiás',              col: 2, row: 0, scores: { regulatory: 55, climate: 58, market: 38, logistics: 50 } },
+  { id: 2, name: 'Bahia Oeste',        col: 4, row: 0, scores: { regulatory: 62, climate: 70, market: 45, logistics: 58 } },
+  { id: 3, name: 'Mato Grosso do Sul', col: 1, row: 1, scores: { regulatory: 50, climate: 52, market: 36, logistics: 45 } },
+  { id: 4, name: 'Paraná',             col: 3, row: 1, scores: { regulatory: 35, climate: 40, market: 30, logistics: 38 } },
+  { id: 5, name: 'Rio Grande do Sul',  col: 5, row: 1, scores: { regulatory: 32, climate: 44, market: 28, logistics: 36 } },
 ];
 
 const HEX_R = 48;
@@ -95,10 +105,10 @@ function drawHex(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
   ctx.closePath();
 }
 
-function hitTestAt(mx: number, my: number, r: number, ox: number, oy: number): number {
+function hitTestAt(mx: number, my: number, r: number, ox: number, oy: number, regions: Region[]): number {
   let closest = -1;
   let minDist  = Infinity;
-  for (const region of REGIONS) {
+  for (const region of regions) {
     const [cx, cy] = hexCenterAt(region.col, region.row, r, ox, oy);
     const dist = Math.hypot(mx - cx, my - cy);
     if (dist < r && dist < minDist) { minDist = dist; closest = region.id; }
@@ -119,7 +129,8 @@ function getVerdict(composite: number): { label: string; color: string } {
   return                      { label: 'HOLD',    color: '#F87171' };
 }
 
-export default function HexMap({ onAnalyzeRegion }: Props) {
+export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
+  const activeRegions = commodity === 'soybeans' ? SOYBEAN_REGIONS : COFFEE_REGIONS;
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const drawParamsRef = useRef({ r: HEX_R, ox: 0, oy: 0 });
@@ -140,6 +151,9 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
   function getRegionScores(region: Region): RegionScores {
     return liveScores[region.name] ?? region.scores;
   }
+
+  // reset selected when commodity changes
+  useEffect(() => { setSelected(null); setLiveScores({}); }, [commodity]);
 
   const LAYER_LABELS: Record<Layer, string> = {
     regulatory: t('regulatory'),
@@ -184,7 +198,7 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
 
-    for (const region of REGIONS) {
+    for (const region of activeRegions) {
       const [cx, cy]   = hexCenterAt(region.col, region.row, r, ox, oy);
       const scores     = getRegionScores(region);
       const score      = getLayerScore(scores, layer);
@@ -241,7 +255,7 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
   useEffect(() => {
     if (!analyzingRegion) drawRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layer, selected, hovered, liveScores, analyzingRegion]);
+  }, [layer, selected, hovered, liveScores, analyzingRegion, commodity]);
 
   useEffect(() => {
     const observer = new ResizeObserver(() => drawRef.current());
@@ -271,14 +285,14 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const [mx, my]       = getLogicalCoords(e);
     const { r, ox, oy } = drawParamsRef.current;
-    const idx            = hitTestAt(mx, my, r, ox, oy);
-    setSelected(idx >= 0 ? REGIONS[idx] : null);
+    const idx            = hitTestAt(mx, my, r, ox, oy, activeRegions);
+    setSelected(idx >= 0 ? activeRegions[idx] : null);
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
     const [mx, my]       = getLogicalCoords(e);
     const { r, ox, oy } = drawParamsRef.current;
-    setHovered(hitTestAt(mx, my, r, ox, oy));
+    setHovered(hitTestAt(mx, my, r, ox, oy, activeRegions));
   }
 
   async function handleAnalyzeClick() {
@@ -539,7 +553,9 @@ export default function HexMap({ onAnalyzeRegion }: Props) {
               fontSize: 9, color: BORDER, fontFamily: 'ui-monospace, Consolas, monospace',
               textAlign: 'center', lineHeight: 1.8,
             }}>
-              12 BR coffee regions<br />with EUDR risk scoring
+              {commodity === 'soybeans'
+                ? <>6 BR soybean regions<br />with EUDR risk scoring</>
+                : <>12 BR coffee regions<br />with EUDR risk scoring</>}
             </div>
           </div>
         )}
