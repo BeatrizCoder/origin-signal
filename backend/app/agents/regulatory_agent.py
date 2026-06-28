@@ -30,6 +30,7 @@ Guidelines:
 - findings: 2-4 specific observations grounded in the provided context
 - articles_cited: cite exact article numbers from the EUDR text when referenced
 - recommendations: 2-4 actionable steps for compliance
+- CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals (e.g. "Recital 49", "Recital 12")
 """
 
 

@@ -27,6 +27,12 @@ Required schema:
   "trade_window": "<best period to export, e.g. 'Q3 2025 — post-harvest, stable freight rates'>",
   "overall_verdict": "Go|Caution|Hold"
 }
+
+Guidelines for recommended_actions timelines:
+- If gap_agent contains action_timeline.gps_mapping_days, use that exact number of days for GPS-related actions.
+- If gap_agent contains action_timeline.documentation_days, use that exact number for documentation actions.
+- These are calculated from actual coverage gaps — cite them specifically (e.g. "11 days of drone mapping required").
+- All timelines must be concrete and derived from the agent data, not generic.
 """
 
 _MOCK = {

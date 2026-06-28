@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { AnalyzeResponse } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 const AMBER    = '#D4900A';
 const BG       = '#0B1120';
@@ -18,13 +20,18 @@ const TOTAL_MS   = 4000;
 const ENGINE_GAP = 600;
 
 interface Props {
+  result: AnalyzeResponse | null;
   error: string | null;
+  onComplete: () => void;
   onRetry: () => void;
 }
 
-export default function ProcessingScreen({ error, onRetry }: Props) {
+export default function ProcessingScreen({ result, error, onComplete, onRetry }: Props) {
   const [engineCount, setEngineCount] = useState(0);
   const [progress,    setProgress]    = useState(0);
+  const [animDone,    setAnimDone]    = useState(false);
+  const calledComplete                = useRef(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const step = 100 / (TOTAL_MS / 40);
@@ -40,11 +47,21 @@ export default function ProcessingScreen({ error, onRetry }: Props) {
       setTimeout(() => setEngineCount(c => Math.min(c + 1, ENGINES.length)), (i + 1) * ENGINE_GAP)
     );
 
+    const completionTimer = setTimeout(() => setAnimDone(true), TOTAL_MS);
+
     return () => {
       clearInterval(progressInterval);
       timers.forEach(clearTimeout);
+      clearTimeout(completionTimer);
     };
   }, []);
+
+  useEffect(() => {
+    if (animDone && result && !error && !calledComplete.current) {
+      calledComplete.current = true;
+      onComplete();
+    }
+  }, [animDone, result, error, onComplete]);
 
   return (
     <div style={{
@@ -73,7 +90,7 @@ export default function ProcessingScreen({ error, onRetry }: Props) {
           color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace',
           marginBottom: 32, textTransform: 'uppercase' as const,
         }}>
-          Initializing Intelligence Engines...
+          {t('initializing')}
         </div>
 
         {/* Engine list */}

@@ -63,10 +63,17 @@ class GapAgent:
             "Implement a digital due diligence management system to track EUDR compliance status continuously."
         )
 
+        gps_days_needed  = round((100 - profile["gps_coverage_pct"]) * 0.38)
+        docs_days_needed = 45 if not profile["deforestation_docs"] else 0
+
         return {
             "gap_risk_score":   score,
             "risk_level":       _risk_level(score),
             "supplier_profile": profile,
             "gaps_identified":  gaps,
             "recommendations":  recommendations,
+            "action_timeline": {
+                "gps_mapping_days":    gps_days_needed,
+                "documentation_days":  docs_days_needed,
+            },
         }

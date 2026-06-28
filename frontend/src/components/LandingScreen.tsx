@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
+import LangToggle from './LangToggle';
 
 export type Focus   = 'regulatory' | 'climate' | 'market' | 'composite';
 export type Horizon = '30' | '90' | '365';
@@ -11,7 +13,7 @@ export interface LandingParams {
 }
 
 interface Props {
-  onSubmit: (params: LandingParams) => void;
+  onAnalyze: (params: LandingParams) => void;
 }
 
 const AMBER    = '#D4900A';
@@ -75,15 +77,16 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase', fontFamily: 'ui-monospace, Consolas, monospace',
 };
 
-export default function LandingScreen({ onSubmit }: Props) {
+export default function LandingScreen({ onAnalyze }: Props) {
   const [commodity, setCommodity] = useState('coffee');
   const [focus,     setFocus]     = useState<Focus>('composite');
   const [horizon,   setHorizon]   = useState<Horizon>('90');
   const [query,     setQuery]     = useState('');
+  const { t } = useLanguage();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSubmit({ commodity, focus, horizon, query });
+    onAnalyze({ commodity, focus, horizon, query });
   }
 
   return (
@@ -105,9 +108,10 @@ export default function LandingScreen({ onSubmit }: Props) {
           <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: 4, color: TEXT, fontFamily: 'system-ui, sans-serif' }}>
             ORIGINSIGNAL
           </span>
+          <LangToggle />
         </div>
         <div style={{ fontSize: 11, letterSpacing: 2.5, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
-          TRADE RISK INTELLIGENCE · BR→EU
+          {t('subtitle')}
         </div>
       </div>
 
@@ -115,7 +119,7 @@ export default function LandingScreen({ onSubmit }: Props) {
       <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 22 }}>
         {/* Commodity */}
         <div>
-          <label style={labelStyle}>Commodity</label>
+          <label style={labelStyle}>{t('commodity_label')}</label>
           <select
             value={commodity}
             onChange={e => setCommodity(e.target.value)}
@@ -134,7 +138,7 @@ export default function LandingScreen({ onSubmit }: Props) {
         {/* Origin / Destination tags */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <label style={labelStyle}>Origin</label>
+            <label style={labelStyle}>{t('origin_label')}</label>
             <div style={{
               background: '#0A1628', border: `1px solid ${AMBER}44`,
               borderRadius: 6, color: AMBER, fontSize: 13,
@@ -143,7 +147,7 @@ export default function LandingScreen({ onSubmit }: Props) {
             }}>⬡ Brazil</div>
           </div>
           <div>
-            <label style={labelStyle}>Destination</label>
+            <label style={labelStyle}>{t('destination_label')}</label>
             <div style={{
               background: '#0A1628', border: `1px solid ${AMBER}44`,
               borderRadius: 6, color: AMBER, fontSize: 13,
@@ -155,26 +159,26 @@ export default function LandingScreen({ onSubmit }: Props) {
 
         {/* Analysis Focus */}
         <div>
-          <label style={labelStyle}>Analysis Focus</label>
+          <label style={labelStyle}>{t('analysis_focus')}</label>
           <RadioPill options={FOCUS_OPTIONS} value={focus} onChange={setFocus} />
         </div>
 
         {/* Time Horizon */}
         <div>
-          <label style={labelStyle}>Time Horizon</label>
+          <label style={labelStyle}>{t('time_horizon')}</label>
           <RadioPill options={HORIZON_OPTIONS} value={horizon} onChange={setHorizon} />
         </div>
 
         {/* Query (optional) */}
         <div>
           <label style={{ ...labelStyle, display: 'flex', gap: 6, alignItems: 'center' }}>
-            Query
+            {t('query_label')}
             <span style={{ color: BORDER, fontWeight: 400, fontSize: 9, letterSpacing: 1 }}>(OPTIONAL)</span>
           </label>
           <textarea
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="e.g. EUDR compliance for coffee exports from Cerrado Mineiro to Germany"
+            placeholder={t('query_placeholder')}
             rows={3}
             style={{
               width: '100%', background: SURFACE, border: `1px solid ${BORDER}`,
@@ -198,7 +202,7 @@ export default function LandingScreen({ onSubmit }: Props) {
             textTransform: 'uppercase' as const,
           }}
         >
-          ANALYZE
+          {t('analyze_btn')}
         </button>
       </form>
 

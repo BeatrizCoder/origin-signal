@@ -1,20 +1,28 @@
 ORIGIN_PORTS: dict[str, dict] = {
-    "Brazil":    {"name": "Porto de Santos",         "capacity": "normal",   "avg_days": 7},
-    "Santos":    {"name": "Porto de Santos",         "capacity": "normal",   "avg_days": 7},
-    "Paranaguá": {"name": "Porto de Paranaguá",      "capacity": "normal",   "avg_days": 9},
-    "Rio":       {"name": "Porto do Rio de Janeiro", "capacity": "moderate", "avg_days": 11},
+    "Brazil":    {"name": "Porto de Santos",         "capacity": "normal",   "avg_days": 3},
+    "Santos":    {"name": "Porto de Santos",         "capacity": "normal",   "avg_days": 3},
+    "Paranaguá": {"name": "Porto de Paranaguá",      "capacity": "normal",   "avg_days": 4},
+    "Rio":       {"name": "Porto do Rio de Janeiro", "capacity": "moderate", "avg_days": 5},
+}
+
+# Sea transit days from Santos per destination (port-to-port, realistic ocean freight)
+_SEA_DAYS: dict[str, int] = {
+    "Hamburg":    25,  # Santos → Hamburg ≈ 25 days sailing
+    "Rotterdam":  22,  # Santos → Rotterdam ≈ 22 days sailing
+    "Antuérpia":  23,  # Santos → Antwerp ≈ 23 days sailing
+    "Le Havre":   20,
+    "Genoa":      18,
 }
 
 DESTINATION_PORTS: dict[str, dict] = {
-    "Germany":        {"name": "Hamburg",   "dhl_index": 62},
-    "European Union": {"name": "Rotterdam", "dhl_index": 45},
-    "Netherlands":    {"name": "Rotterdam", "dhl_index": 45},
-    "Belgium":        {"name": "Antuérpia", "dhl_index": 48},
-    "France":         {"name": "Le Havre",  "dhl_index": 55},
-    "Italy":          {"name": "Genoa",     "dhl_index": 58},
+    "Germany":        {"name": "Hamburg",   "dhl_index": 62, "handling_days": 3},
+    "European Union": {"name": "Hamburg",   "dhl_index": 62, "handling_days": 3},
+    "Netherlands":    {"name": "Rotterdam", "dhl_index": 45, "handling_days": 3},
+    "Belgium":        {"name": "Antuérpia", "dhl_index": 48, "handling_days": 3},
+    "France":         {"name": "Le Havre",  "dhl_index": 55, "handling_days": 3},
+    "Italy":          {"name": "Genoa",     "dhl_index": 58, "handling_days": 3},
 }
 
-_TRANSIT_SEA_DAYS = 21
 _DEST_HANDLING_DAYS = 3
 
 
@@ -39,7 +47,8 @@ class LogisticsAgent:
             score += 10
         score = max(0, min(100, score))
 
-        transit_days = origin_port["avg_days"] + _TRANSIT_SEA_DAYS + _DEST_HANDLING_DAYS
+        sea_days     = _SEA_DAYS.get(dest_port["name"], 24)
+        transit_days = origin_port["avg_days"] + sea_days + _DEST_HANDLING_DAYS
 
         findings = [
             f"Primary export port: {origin_port['name']} — capacity status '{origin_port['capacity']}', "

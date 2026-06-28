@@ -15,12 +15,12 @@ export default function App() {
   const [result,    setResult]    = useState<AnalyzeResponse | null>(null);
   const [error,     setError]     = useState<string | null>(null);
 
-  async function handleLandingSubmit({ commodity: c, focus, horizon: h, query }: LandingParams) {
+  async function handleAnalyze({ commodity: c, focus, horizon: h, query }: LandingParams) {
     setCommodity(c);
     setHorizon(h);
-    setScreen('processing');
     setError(null);
     setResult(null);
+    setScreen('processing');
 
     const queryText = query.trim() ||
       `Analyze ${focus} risk for ${c} exports from Brazil to the European Union over ${h} days`;
@@ -37,15 +37,9 @@ export default function App() {
       setTimeout(() => reject(new Error('Request timed out. Please try again.')), 30_000)
     );
 
-    const minWait = new Promise<void>(resolve => setTimeout(resolve, 4_000));
-
     try {
-      const [data] = await Promise.all([
-        Promise.race([apiCall, timeout]),
-        minWait,
-      ]);
+      const data = await Promise.race([apiCall, timeout]);
       setResult(data);
-      setScreen('dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error. Please try again.');
     }
@@ -54,7 +48,9 @@ export default function App() {
   if (screen === 'processing') {
     return (
       <ProcessingScreen
+        result={result}
         error={error}
+        onComplete={() => setScreen('dashboard')}
         onRetry={() => setScreen('landing')}
       />
     );
@@ -66,10 +62,10 @@ export default function App() {
         result={result}
         commodity={commodity}
         horizon={horizon}
-        onReset={() => setScreen('landing')}
+        onNewAnalysis={() => setScreen('landing')}
       />
     );
   }
 
-  return <LandingScreen onSubmit={handleLandingSubmit} />;
+  return <LandingScreen onAnalyze={handleAnalyze} />;
 }
