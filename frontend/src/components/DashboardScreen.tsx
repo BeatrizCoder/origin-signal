@@ -97,9 +97,33 @@ interface Props {
 }
 
 export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('analysis');
+  const [activeTab,   setActiveTab]   = useState<Tab>('analysis');
+  const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const { t } = useLanguage();
   const isImport = tradeDirection === 'import';
+
+  async function handleExport(format: 'pdf' | 'excel') {
+    setDownloading(format);
+    try {
+      const resp = await fetch(`http://localhost:8000/api/export/${format}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result),
+      });
+      if (!resp.ok) throw new Error('Export failed');
+      const blob = await resp.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `originsignal_${new Date().toISOString().slice(0, 10)}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(null);
+    }
+  }
 
   async function handleAnalyzeRegion(regionName: string) {
     const data = await analyzeRoute({
@@ -193,6 +217,37 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
           >
             {t('new_analysis')}
           </button>
+        </div>
+
+        {/* Export buttons */}
+        <div style={{
+          padding: '8px 18px',
+          borderBottom: `1px solid ${BORDER}`,
+          display: 'flex', gap: 8, flexShrink: 0,
+        }}>
+          {(['pdf', 'excel'] as const).map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => handleExport(fmt)}
+              disabled={downloading !== null}
+              style={{
+                flex: 1,
+                background: 'none',
+                border: `1px solid ${downloading === fmt ? BORDER : `${AMBER}66`}`,
+                borderRadius: 4,
+                color: downloading === fmt ? TEXT_MUTED : AMBER,
+                padding: '5px 8px',
+                cursor: downloading !== null ? 'not-allowed' : 'pointer',
+                fontSize: 10,
+                fontFamily: 'ui-monospace, Consolas, monospace',
+                letterSpacing: 0.8,
+                opacity: downloading !== null && downloading !== fmt ? 0.45 : 1,
+                transition: 'all 0.15s',
+              }}
+            >
+              {downloading === fmt ? t('generating') : fmt === 'pdf' ? t('export_pdf') : t('export_excel')}
+            </button>
+          ))}
         </div>
 
         {/* Scrollable sidebar body */}

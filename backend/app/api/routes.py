@@ -1,6 +1,7 @@
 import asyncio
+from datetime import datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from app.agents.climate_agent import ClimateAgent
@@ -9,6 +10,8 @@ from app.agents.gap_agent import GapAgent
 from app.agents.logistics_agent import LogisticsAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.regulatory_agent import RegulatoryAgent
+from app.utils.excel_generator import generate_excel
+from app.utils.pdf_generator import generate_pdf
 
 router = APIRouter(prefix="/api")
 
@@ -97,3 +100,25 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "origin":             body.origin,
         "destination":        body.destination,
     }
+
+
+@router.post("/export/pdf")
+async def export_pdf(data: dict) -> Response:
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+    pdf_bytes = await asyncio.to_thread(generate_pdf, data)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="originsignal_{timestamp}.pdf"'},
+    )
+
+
+@router.post("/export/excel")
+async def export_excel_endpoint(data: dict) -> Response:
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+    xlsx_bytes = await asyncio.to_thread(generate_excel, data)
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="originsignal_{timestamp}.xlsx"'},
+    )
