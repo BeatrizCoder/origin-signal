@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AnalyzeResponse } from '../types';
+import type { AnalyzeResponse, TariffCalculation } from '../types';
 import { getRiskLevel } from '../types';
 import HexMap from './HexMap';
 import { analyzeRoute } from '../services/api';
@@ -39,6 +39,9 @@ const AGENTS = [
 ];
 
 const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+
+const fmtBRL = (v: number) =>
+  `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function dimColor(v: number): string {
   if (v >= 70) return '#F87171';
@@ -155,6 +158,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
     { key: 'market'     as const, value: clamp(result.market?.market_risk_score ?? 50) },
     { key: 'climate'    as const, value: clamp(result.climate?.climate_risk_score ?? 55) },
     { key: 'logistics'  as const, value: clamp(result.logistics?.logistics_risk_score ?? 44) },
+    ...(isImport && result.tariff ? [{ key: 'tariff' as const, value: clamp(result.tariff.tariff_risk_score) }] : []),
   ];
 
   const gpsPct      = result.gap?.supplier_profile?.gps_coverage_pct ?? 0;
@@ -532,6 +536,79 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   </div>
                 </div>
               </div>
+
+              {/* ── Tariff Calculation ── */}
+              {isImport && result.tariff && result.tariff.ncm_code && (
+                <div style={{
+                  background: BG, border: `1px solid ${AMBER}55`,
+                  borderRadius: 8, padding: '20px 24px',
+                  display: 'flex', flexDirection: 'column', gap: 16,
+                }}>
+                  <div style={{
+                    fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
+                    textTransform: 'uppercase' as const,
+                    fontFamily: 'ui-monospace, Consolas, monospace',
+                  }}>{t('tariff_calculation')}</div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ fontSize: 13, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                      {t('ncm_code')}: {result.tariff.ncm_code} · {result.tariff.ncm_description}
+                    </div>
+                    <div style={{ fontSize: 13, color: AMBER_LIGHT, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                      {t('trade_agreement')}: {result.tariff.trade_agreement} · {t('ii_reduction')}: {result.tariff.ii_reduction_pct}%
+                    </div>
+                  </div>
+
+                  {'total_landed_brl' in result.tariff.calculation && (() => {
+                    const c = result.tariff!.calculation as TariffCalculation;
+                    const rows: { label: string; value: string; note?: string }[] = [
+                      { label: 'CIF Value (USD)', value: `$${c.cif_usd.toLocaleString('en-US')}`, note: fmtBRL(c.cif_brl) },
+                      {
+                        label: `II (${c.ii_rate_tec}% → ${c.ii_rate_applied}%)`,
+                        value: fmtBRL(c.ii_value),
+                        note: result.tariff!.ii_reduction_pct === 100 ? `${result.tariff!.trade_agreement} exempt` : undefined,
+                      },
+                      { label: `IPI (${c.ipi_rate}%)`, value: fmtBRL(c.ipi_value) },
+                      { label: 'PIS/COFINS (9.65%)', value: fmtBRL(c.pis_cofins_value) },
+                      { label: 'ICMS (18%)', value: fmtBRL(c.icms_value) },
+                    ];
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {rows.map((row, i) => (
+                          <div key={i} style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                            fontSize: 12, fontFamily: 'ui-monospace, Consolas, monospace',
+                          }}>
+                            <span style={{ color: TEXT_MUTED }}>{row.label}</span>
+                            <span style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+                              {row.note && <span style={{ color: TEXT_MUTED, fontSize: 10 }}>{row.note}</span>}
+                              <span style={{ color: TEXT, fontWeight: 600 }}>{row.value}</span>
+                            </span>
+                          </div>
+                        ))}
+                        <div style={{ height: 1, background: BORDER, margin: '4px 0' }} />
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                          fontSize: 13, fontFamily: 'ui-monospace, Consolas, monospace',
+                        }}>
+                          <span style={{ color: TEXT_MUTED, fontWeight: 700 }}>{t('total_taxes')}</span>
+                          <span style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+                            <span style={{ color: AMBER_LIGHT, fontSize: 11 }}>{c.tax_burden_pct}%</span>
+                            <span style={{ color: TEXT, fontWeight: 700 }}>{fmtBRL(c.total_taxes_brl)}</span>
+                          </span>
+                        </div>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                          fontSize: 14, fontFamily: 'ui-monospace, Consolas, monospace',
+                        }}>
+                          <span style={{ color: TEXT, fontWeight: 700 }}>{t('landed_cost')}</span>
+                          <span style={{ color: AMBER_LIGHT, fontWeight: 700 }}>{fmtBRL(c.total_landed_brl)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* ── Executive Intelligence Briefing ── */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

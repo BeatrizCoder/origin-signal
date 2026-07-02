@@ -66,6 +66,7 @@ Guidelines:
 - Frame key_risks as import barriers, supply disruption from {origin}, and Brazilian regulatory compliance risks.
 - recommended_actions should address import licensing, tariff planning, supplier qualification in {origin}, and logistics contracts.
 - overall_verdict reflects whether the Brazilian company should proceed with importing from {origin} now.
+- If tariff_agent contains calculation data, cite calculation.tax_burden_pct (total tax burden as % of CIF) and calculation.total_landed_brl (landed cost in BRL) explicitly when discussing cost or budget impact. Reference tariff_agent.ncm_code and tariff_agent.trade_agreement when justifying the tariff burden or a preferential rate.
 """
 
 _MOCK_EXPORT = {
@@ -118,7 +119,8 @@ _MOCK_IMPORT = {
         "Brazilian coffee supply presents moderate reliability risk for European buyers, driven by incomplete "
         "EUDR traceability documentation across key producing regions. Sul de Minas and Cerrado Mineiro offer "
         "the strongest compliance baseline. Buyers should require GPS-verified supply chain data before "
-        "contracting volumes for H2 delivery."
+        "contracting volumes for H2 delivery. Import tariff burden should also be budgeted into landed cost "
+        "planning, as the applicable NCM classification and trade agreement status materially affect total cost."
     ),
     "key_risks": [
         {
@@ -179,6 +181,7 @@ class ExecutiveAgent:
         destination: str,
         trade_direction: str = "export",
         origin: str = "Brazil",
+        tariff: dict | None = None,
     ) -> dict:
         is_import = trade_direction == "import"
 
@@ -197,6 +200,7 @@ class ExecutiveAgent:
             "market_agent":     market,
             "logistics_agent":  logistics,
             "gap_agent":        gap,
+            "tariff_agent":     tariff,
         }, indent=2, ensure_ascii=False)
 
         response = self._client.messages.create(

@@ -10,6 +10,7 @@ from app.agents.gap_agent import GapAgent
 from app.agents.logistics_agent import LogisticsAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.regulatory_agent import RegulatoryAgent
+from app.agents.tariff_agent import TariffAgent
 from app.utils.excel_generator import generate_excel
 from app.utils.pdf_generator import generate_pdf
 
@@ -20,7 +21,20 @@ _climate    = ClimateAgent()
 _market     = MarketAgent()
 _logistics  = LogisticsAgent()
 _gap        = GapAgent()
+_tariff     = TariffAgent()
 _executive  = ExecutiveAgent()
+
+_EMPTY_TARIFF = {
+    "tariff_risk_score": 0,
+    "risk_level": "Low",
+    "ncm_code": None,
+    "ncm_description": None,
+    "trade_agreement": None,
+    "ii_reduction_pct": 0,
+    "calculation": {},
+    "findings": [],
+    "recommendations": [],
+}
 
 
 def _risk_level(score: int) -> str:
@@ -50,33 +64,57 @@ async def analyze(body: AnalyzeRequest) -> dict:
     # For import: analyze climate at origin country; for export: analyze Brazilian origin region
     climate_location = body.origin if is_import else body.origin_region
 
-    # Phase 1: 4 independent agents in parallel
-    reg, clim, mkt, logi = await asyncio.gather(
-        asyncio.to_thread(
-            _regulatory.analyze,
-            body.query, body.commodity, body.origin, body.destination, body.trade_direction,
-        ),
-        _climate.analyze(climate_location, body.commodity, is_import),
-        _market.analyze(body.commodity, body.destination),
-        _logistics.analyze(body.origin, body.destination, body.commodity, body.trade_direction),
-    )
+    # Phase 1: independent agents in parallel (+ tariff when importing)
+    if is_import:
+        reg, clim, mkt, logi, tariff = await asyncio.gather(
+            asyncio.to_thread(
+                _regulatory.analyze,
+                body.query, body.commodity, body.origin, body.destination, body.trade_direction,
+            ),
+            _climate.analyze(climate_location, body.commodity, is_import),
+            _market.analyze(body.commodity, body.destination),
+            _logistics.analyze(body.origin, body.destination, body.commodity, body.trade_direction),
+            _tariff.analyze(body.commodity, body.origin),
+        )
+    else:
+        reg, clim, mkt, logi = await asyncio.gather(
+            asyncio.to_thread(
+                _regulatory.analyze,
+                body.query, body.commodity, body.origin, body.destination, body.trade_direction,
+            ),
+            _climate.analyze(climate_location, body.commodity, is_import),
+            _market.analyze(body.commodity, body.destination),
+            _logistics.analyze(body.origin, body.destination, body.commodity, body.trade_direction),
+        )
+        tariff = _EMPTY_TARIFF.copy()
 
-    # Phase 2: gap (uses reg) + executive (uses all) in parallel
+    # Phase 2: gap (uses reg) + executive (uses all, incl. tariff) in parallel
     gap, executive = await asyncio.gather(
         _gap.analyze(reg, body.commodity),
         _executive.synthesize(
             reg, clim, mkt, logi, {}, body.query, body.commodity,
             body.destination, body.trade_direction, body.origin,
+            tariff=tariff,
         ),
     )
 
-    overall = max(0, min(100, round(
-        reg["risk_score"]                * 0.30 +
-        clim["climate_risk_score"]       * 0.25 +
-        mkt["market_risk_score"]         * 0.20 +
-        logi["logistics_risk_score"]     * 0.15 +
-        gap["gap_risk_score"]            * 0.10
-    )))
+    if is_import:
+        overall = max(0, min(100, round(
+            reg["risk_score"]                * 0.25 +
+            clim["climate_risk_score"]       * 0.20 +
+            mkt["market_risk_score"]         * 0.15 +
+            logi["logistics_risk_score"]     * 0.15 +
+            gap["gap_risk_score"]            * 0.10 +
+            tariff["tariff_risk_score"]      * 0.15
+        )))
+    else:
+        overall = max(0, min(100, round(
+            reg["risk_score"]                * 0.30 +
+            clim["climate_risk_score"]       * 0.25 +
+            mkt["market_risk_score"]         * 0.20 +
+            logi["logistics_risk_score"]     * 0.15 +
+            gap["gap_risk_score"]            * 0.10
+        )))
 
     return {
         "regulatory":         reg,
@@ -84,6 +122,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "market":             mkt,
         "logistics":          logi,
         "gap":                gap,
+        "tariff":             tariff,
         "executive":          executive,
         "overall_risk_score": overall,
         "export_readiness":   100 - overall,

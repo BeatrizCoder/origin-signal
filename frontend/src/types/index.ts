@@ -51,6 +51,34 @@ export interface LogisticsResult {
   recommendations: string[];
 }
 
+export interface TariffCalculation {
+  cif_usd: number;
+  cif_brl: number;
+  usd_brl_rate: number;
+  ii_rate_tec: number;
+  ii_rate_applied: number;
+  ii_value: number;
+  ipi_rate: number;
+  ipi_value: number;
+  pis_cofins_value: number;
+  icms_value: number;
+  total_taxes_brl: number;
+  total_landed_brl: number;
+  tax_burden_pct: number;
+}
+
+export interface TariffResult {
+  tariff_risk_score: number;
+  risk_level: string;
+  ncm_code: string | null;
+  ncm_description: string | null;
+  trade_agreement: string | null;
+  ii_reduction_pct: number;
+  calculation: TariffCalculation | Record<string, never>;
+  findings: string[];
+  recommendations: string[];
+}
+
 export interface GapResult {
   gap_risk_score: number;
   risk_level: string;
@@ -89,6 +117,7 @@ export interface AnalyzeResponse {
   market: MarketResult;
   logistics: LogisticsResult;
   gap: GapResult;
+  tariff?: TariffResult;
   executive: ExecutiveResult;
   overall_risk_score: number;
   export_readiness: number;

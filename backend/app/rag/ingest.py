@@ -12,7 +12,7 @@ from app.rag.vector_store import EUDRVectorStore
 
 DATA_DIR = Path(__file__).parents[3] / "backend" / "data"
 CHROMA_DIR = str(DATA_DIR / "chroma_db")
-DOC_DIRS = ["eudr_docs", "antaq_docs", "market_reports", "import_docs"]
+DOC_DIRS = ["eudr_docs", "antaq_docs", "market_reports", "import_docs", "tariff_docs"]
 
 
 def _find_docs() -> list[Path]:
