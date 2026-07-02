@@ -1,8 +1,10 @@
 import { useRef, useEffect, useState } from 'react';
 import { getRiskLevel } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import type { TranslationKey } from '../i18n/translations';
 
 type Layer = 'regulatory' | 'climate' | 'market' | 'composite';
+type TradeDirection = 'export' | 'import';
 
 interface RegionScores {
   regulatory: number;
@@ -17,11 +19,13 @@ interface Region {
   col: number;
   row: number;
   scores: RegionScores;
+  flag?: string;
 }
 
 interface Props {
   onAnalyzeRegion?: (regionName: string) => Promise<RegionScores>;
   commodity?: string;
+  tradeDirection?: TradeDirection;
 }
 
 const COFFEE_REGIONS: Region[] = [
@@ -40,13 +44,53 @@ const COFFEE_REGIONS: Region[] = [
 ];
 
 const SOYBEAN_REGIONS: Region[] = [
-  { id: 0, name: 'Mato Grosso',        col: 0, row: 0, scores: { regulatory: 68, climate: 74, market: 42, logistics: 60 } },
-  { id: 1, name: 'Goiás',              col: 2, row: 0, scores: { regulatory: 55, climate: 58, market: 38, logistics: 50 } },
-  { id: 2, name: 'Bahia Oeste',        col: 4, row: 0, scores: { regulatory: 62, climate: 70, market: 45, logistics: 58 } },
-  { id: 3, name: 'Mato Grosso do Sul', col: 1, row: 1, scores: { regulatory: 50, climate: 52, market: 36, logistics: 45 } },
-  { id: 4, name: 'Paraná',             col: 3, row: 1, scores: { regulatory: 35, climate: 40, market: 30, logistics: 38 } },
-  { id: 5, name: 'Rio Grande do Sul',  col: 5, row: 1, scores: { regulatory: 32, climate: 44, market: 28, logistics: 36 } },
+  { id: 0, name: 'Mato Grosso',        col: 2, row: 2, scores: { regulatory: 72, climate: 65, market: 55, logistics: 48 } },
+  { id: 1, name: 'Mato Grosso do Sul', col: 3, row: 3, scores: { regulatory: 58, climate: 50, market: 52, logistics: 42 } },
+  { id: 2, name: 'Paraná',             col: 3, row: 5, scores: { regulatory: 35, climate: 38, market: 60, logistics: 28 } },
+  { id: 3, name: 'Rio Grande do Sul',  col: 2, row: 6, scores: { regulatory: 28, climate: 45, market: 55, logistics: 22 } },
+  { id: 4, name: 'Goiás',              col: 4, row: 3, scores: { regulatory: 62, climate: 70, market: 48, logistics: 35 } },
+  { id: 5, name: 'Bahia Oeste',        col: 5, row: 1, scores: { regulatory: 78, climate: 82, market: 42, logistics: 58 } },
+  { id: 6, name: 'Maranhão',           col: 6, row: 1, scores: { regulatory: 85, climate: 60, market: 38, logistics: 65 } },
+  { id: 7, name: 'Piauí',              col: 6, row: 2, scores: { regulatory: 80, climate: 58, market: 35, logistics: 62 } },
+  { id: 8, name: 'Tocantins',          col: 5, row: 2, scores: { regulatory: 75, climate: 62, market: 40, logistics: 55 } },
 ];
+
+const FRUITS_REGIONS: Region[] = [
+  { id: 0, name: 'São Paulo',             col: 4, row: 4, scores: { regulatory: 42, climate: 35, market: 68, logistics: 22 } },
+  { id: 1, name: 'Vale do São Francisco', col: 5, row: 2, scores: { regulatory: 55, climate: 75, market: 58, logistics: 45 } },
+  { id: 2, name: 'Santa Catarina',        col: 3, row: 6, scores: { regulatory: 25, climate: 28, market: 62, logistics: 18 } },
+  { id: 3, name: 'Espírito Santo',        col: 6, row: 3, scores: { regulatory: 48, climate: 40, market: 55, logistics: 38 } },
+  { id: 4, name: 'Bahia',                 col: 5, row: 3, scores: { regulatory: 65, climate: 72, market: 45, logistics: 52 } },
+  { id: 5, name: 'Rio Grande do Norte',   col: 6, row: 1, scores: { regulatory: 50, climate: 68, market: 42, logistics: 48 } },
+];
+
+const IMPORT_ORIGINS_MAP: Region[] = [
+  { id: 0,  name: 'Argentina',      col: 2, row: 5, scores: { regulatory: 25, climate: 35, market: 45, logistics: 15 }, flag: '🇦🇷' },
+  { id: 1,  name: 'Uruguay',        col: 2, row: 6, scores: { regulatory: 20, climate: 30, market: 48, logistics: 12 }, flag: '🇺🇾' },
+  { id: 2,  name: 'Paraguay',       col: 3, row: 5, scores: { regulatory: 22, climate: 32, market: 42, logistics: 14 }, flag: '🇵🇾' },
+  { id: 3,  name: 'Colombia',       col: 3, row: 3, scores: { regulatory: 45, climate: 55, market: 52, logistics: 32 }, flag: '🇨🇴' },
+  { id: 4,  name: 'Peru',           col: 4, row: 4, scores: { regulatory: 48, climate: 58, market: 50, logistics: 38 }, flag: '🇵🇪' },
+  { id: 5,  name: 'Chile',          col: 3, row: 4, scores: { regulatory: 30, climate: 40, market: 55, logistics: 25 }, flag: '🇨🇱' },
+  { id: 6,  name: 'United States',  col: 1, row: 2, scores: { regulatory: 62, climate: 58, market: 50, logistics: 42 }, flag: '🇺🇸' },
+  { id: 7,  name: 'China',          col: 7, row: 2, scores: { regulatory: 75, climate: 65, market: 55, logistics: 68 }, flag: '🇨🇳' },
+  { id: 8,  name: 'European Union', col: 5, row: 1, scores: { regulatory: 35, climate: 42, market: 48, logistics: 35 }, flag: '🇪🇺' },
+  { id: 9,  name: 'Germany',        col: 5, row: 2, scores: { regulatory: 32, climate: 38, market: 50, logistics: 32 }, flag: '🇩🇪' },
+  { id: 10, name: 'Netherlands',    col: 6, row: 1, scores: { regulatory: 28, climate: 35, market: 52, logistics: 28 }, flag: '🇳🇱' },
+];
+
+const COUNTRY_KEY: Record<string, TranslationKey> = {
+  'Argentina':      'country_argentina',
+  'Uruguay':        'country_uruguay',
+  'Paraguay':       'country_paraguay',
+  'Colombia':       'country_colombia',
+  'Peru':           'country_peru',
+  'Chile':          'country_chile',
+  'United States':  'country_united_states',
+  'China':          'country_china',
+  'European Union': 'country_european_union',
+  'Germany':        'country_germany',
+  'Netherlands':    'country_netherlands',
+};
 
 const HEX_R = 48;
 const SIDEBAR_W = 280;
@@ -129,8 +173,13 @@ function getVerdict(composite: number): { label: string; color: string } {
   return                      { label: 'HOLD',    color: '#F87171' };
 }
 
-export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
-  const activeRegions = commodity === 'soybeans' ? SOYBEAN_REGIONS : COFFEE_REGIONS;
+export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'export' }: Props) {
+  const isImport = tradeDirection === 'import';
+  const activeRegions = isImport
+    ? IMPORT_ORIGINS_MAP
+    : commodity === 'soybeans' ? SOYBEAN_REGIONS
+    : commodity === 'fruits'   ? FRUITS_REGIONS
+    : COFFEE_REGIONS;
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const drawParamsRef = useRef({ r: HEX_R, ox: 0, oy: 0 });
@@ -141,7 +190,7 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
   const [liveScores,      setLiveScores]      = useState<Record<string, RegionScores>>({});
   const [analyzingRegion, setAnalyzingRegion] = useState<string | null>(null);
 
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const pulseRef    = useRef(0.65);
   const pulseDirRef = useRef(1);
@@ -152,8 +201,8 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
     return liveScores[region.name] ?? region.scores;
   }
 
-  // reset selected when commodity changes
-  useEffect(() => { setSelected(null); setLiveScores({}); }, [commodity]);
+  // reset selected when commodity or trade direction changes
+  useEffect(() => { setSelected(null); setLiveScores({}); }, [commodity, tradeDirection]);
 
   const LAYER_LABELS: Record<Layer, string> = {
     regulatory: t('regulatory'),
@@ -187,12 +236,14 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
     const W = rect.width;
     const H = rect.height;
 
-    const r     = HEX_R;
-    const w     = Math.sqrt(3) * r;
-    const gridW = 5.5 * w;
-    const gridH = 3 * r * 1.5;
-    const ox    = Math.max(w / 2, (W - gridW) / 2);
-    const oy    = Math.max(r,     (H - gridH) / 2);
+    const r      = HEX_R;
+    const w      = Math.sqrt(3) * r;
+    const maxCol = Math.max(...activeRegions.map(reg => reg.col));
+    const maxRow = Math.max(...activeRegions.map(reg => reg.row));
+    const gridW  = (maxCol + 1.5) * w;
+    const gridH  = maxRow * r * 1.5 + 2 * r;
+    const ox     = Math.max(w / 2, (W - gridW) / 2);
+    const oy     = Math.max(r,     (H - gridH) / 2);
     drawParamsRef.current = { r, ox, oy };
 
     ctx.fillStyle = BG;
@@ -220,11 +271,21 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
       ctx.lineWidth   = isSelected ? 2.5 : 1.5;
       ctx.stroke();
 
-      const [line1, line2] = wrapText(region.name);
+      const displayName = region.flag && COUNTRY_KEY[region.name]
+        ? t(COUNTRY_KEY[region.name])
+        : region.name;
+      const [line1, line2] = wrapText(displayName);
       ctx.fillStyle    = 'rgba(255,255,255,0.92)';
       ctx.font         = 'bold 10px ui-monospace, Consolas, monospace';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
+
+      if (region.flag) {
+        ctx.font = '13px sans-serif';
+        ctx.fillText(region.flag, cx, cy - (line2 ? 26 : 20));
+        ctx.font = 'bold 10px ui-monospace, Consolas, monospace';
+      }
+
       if (line2) {
         ctx.fillText(line1.toUpperCase(), cx, cy - 14);
         ctx.fillText(line2.toUpperCase(), cx, cy - 3);
@@ -255,7 +316,7 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
   useEffect(() => {
     if (!analyzingRegion) drawRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layer, selected, hovered, liveScores, analyzingRegion, commodity]);
+  }, [layer, selected, hovered, liveScores, analyzingRegion, commodity, tradeDirection, language]);
 
   useEffect(() => {
     const observer = new ResizeObserver(() => drawRef.current());
@@ -329,7 +390,7 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
       }}
     >
       {/* ── Canvas area — takes all space except sidebar ── */}
-      <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', flex: 1, minWidth: 0, overflow: 'hidden' }}>
         <canvas
           ref={canvasRef}
           onClick={handleClick}
@@ -445,7 +506,7 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
                   fontSize: 9, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
                   textTransform: 'uppercase' as const,
                   fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 2,
-                }}>{t('export_readiness')}</div>
+                }}>{isImport ? 'SUPPLY RELIABILITY' : t('export_readiness')}</div>
                 <div style={{
                   fontFamily: 'ui-monospace, Consolas, monospace',
                   fontSize: 40, fontWeight: 700, color: AMBER, lineHeight: 1,
@@ -553,9 +614,13 @@ export default function HexMap({ onAnalyzeRegion, commodity }: Props) {
               fontSize: 9, color: BORDER, fontFamily: 'ui-monospace, Consolas, monospace',
               textAlign: 'center', lineHeight: 1.8,
             }}>
-              {commodity === 'soybeans'
-                ? <>6 BR soybean regions<br />with EUDR risk scoring</>
-                : <>12 BR coffee regions<br />with EUDR risk scoring</>}
+              {isImport
+                ? <>{IMPORT_ORIGINS_MAP.length} import origin countries<br />with EUDR risk scoring</>
+                : commodity === 'soybeans'
+                ? <>{SOYBEAN_REGIONS.length} BR soybean regions<br />with EUDR risk scoring</>
+                : commodity === 'fruits'
+                ? <>{FRUITS_REGIONS.length} BR fruit regions<br />with EUDR risk scoring</>
+                : <>{COFFEE_REGIONS.length} BR coffee regions<br />with EUDR risk scoring</>}
             </div>
           </div>
         )}

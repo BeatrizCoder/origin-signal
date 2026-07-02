@@ -127,11 +127,11 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
   async function handleAnalyzeRegion(regionName: string) {
     const data = await analyzeRoute({
-      query: `Trade risk assessment for ${regionName} region`,
+      query: `Trade risk assessment for ${regionName}${isImport ? '' : ' region'}`,
       commodity,
-      origin: 'Brazil',
-      destination,
-      origin_region: regionName,
+      origin: isImport ? regionName : 'Brazil',
+      destination: isImport ? 'Brazil' : destination,
+      origin_region: isImport ? undefined : regionName,
       trade_direction: tradeDirection,
     });
     return {
@@ -165,6 +165,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
   const riskBadge = riskLevel === 'HIGH' ? t('high') : riskLevel === 'MEDIUM' ? t('medium') : t('low');
   const verdictLabel = verdict === 'Go' ? t('go') : verdict === 'Hold' ? t('hold') : t('caution');
+
+  const mapTitle = isImport
+    ? 'SUPPLY ORIGIN RISK MAP · IMPORT SOURCES'
+    : `HONEYCOMB RISK MAP · ${commodity === 'soybeans' ? 'SOYBEAN' : commodity === 'fruits' ? 'FRUIT' : 'COFFEE'} PRODUCING REGIONS · BRAZIL`;
 
   return (
     <div style={{
@@ -399,6 +403,16 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
             </button>
           ))}
 
+          {activeTab === 'map' && (
+            <span style={{
+              marginLeft: 20, fontSize: 10, fontWeight: 700, letterSpacing: 1.2,
+              color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace',
+              textTransform: 'uppercase' as const,
+            }}>
+              {mapTitle}
+            </span>
+          )}
+
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{
               fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
@@ -424,7 +438,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
           padding:   activeTab === 'map' ? 0 : '24px 28px 60px',
         }}>
 
-          {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} />}
+          {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} tradeDirection={tradeDirection} />}
 
           {activeTab === 'analysis' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 820 }}>
