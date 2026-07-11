@@ -56,6 +56,26 @@ function dimColor(v: number): string {
   return '#34D399';
 }
 
+const AMBER_BTN_STYLE: React.CSSProperties = {
+  flex: 1,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+  background: 'transparent',
+  border: '0.5px solid rgba(212,144,10,0.4)',
+  borderRadius: 4,
+  color: AMBER,
+  padding: '4px 10px',
+  cursor: 'pointer',
+  fontSize: 10,
+  fontFamily: 'ui-monospace, Consolas, monospace',
+  letterSpacing: '0.06em',
+  transition: 'background 0.15s',
+  whiteSpace: 'nowrap',
+};
+
+function handleAmberHover(e: React.MouseEvent<HTMLButtonElement>, entering: boolean) {
+  e.currentTarget.style.background = entering ? 'rgba(212,144,10,0.1)' : 'transparent';
+}
+
 function Tag({ children }: { children: React.ReactNode }) {
   return (
     <span style={{
@@ -189,20 +209,20 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
     }}>
 
       {/* ═══════════════════════════════════════
-          LEFT SIDEBAR — 280px fixed
+          LEFT SIDEBAR — 300px fixed
       ═══════════════════════════════════════ */}
       <aside style={{
-        width: 280, flexShrink: 0,
+        width: 300, flexShrink: 0,
         background: SIDEBAR_BG,
         borderRight: `1px solid ${BORDER}`,
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
       }}>
-        {/* Logo + New Analysis */}
+        {/* Logo + History/New Analysis */}
         <div style={{
           padding: '14px 18px',
           borderBottom: `1px solid ${BORDER}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          display: 'flex', flexDirection: 'column', gap: 10,
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -221,29 +241,20 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={onHistory}
-              style={{
-                background: 'none', border: `1px solid ${BORDER}`,
-                borderRadius: 4, color: TEXT_MUTED,
-                padding: '4px 9px', cursor: 'pointer',
-                fontSize: 10, fontFamily: 'ui-monospace, Consolas, monospace',
-                letterSpacing: 0.8, transition: 'color 0.15s',
-                display: 'flex', alignItems: 'center', gap: 4,
-              }}
+              style={AMBER_BTN_STYLE}
+              onMouseEnter={e => handleAmberHover(e, true)}
+              onMouseLeave={e => handleAmberHover(e, false)}
             >
               ⏱ {t('history')}
             </button>
             <button
               onClick={onNewAnalysis}
-              style={{
-                background: 'none', border: `1px solid ${BORDER}`,
-                borderRadius: 4, color: TEXT_MUTED,
-                padding: '4px 9px', cursor: 'pointer',
-                fontSize: 10, fontFamily: 'ui-monospace, Consolas, monospace',
-                letterSpacing: 0.8, transition: 'color 0.15s',
-              }}
+              style={AMBER_BTN_STYLE}
+              onMouseEnter={e => handleAmberHover(e, true)}
+              onMouseLeave={e => handleAmberHover(e, false)}
             >
               {t('new_analysis')}
             </button>
@@ -468,7 +479,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
           {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} tradeDirection={tradeDirection} />}
 
           {activeTab === 'analysis' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 820 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
 
               {/* ── 3 Metric cards ── */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
