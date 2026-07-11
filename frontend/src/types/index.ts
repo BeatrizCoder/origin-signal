@@ -133,6 +133,27 @@ export interface AnalyzeResponse {
   commodity: string;
   origin: string;
   destination: string;
+  analysis_id?: string | null;
+}
+
+export interface HistoryItem {
+  id: string;
+  created_at: string;
+  commodity: string;
+  origin: string;
+  destination: string;
+  trade_direction: 'export' | 'import';
+  overall_risk_score: number;
+  export_readiness: number;
+  risk_level: string;
+  query: string;
+  executive_summary: string;
+  overall_verdict: string;
+  regulatory_score: number;
+  climate_score: number;
+  market_score: number;
+  logistics_score: number;
+  tariff_score: number;
 }
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';

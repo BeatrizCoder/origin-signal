@@ -11,6 +11,7 @@ from app.agents.logistics_agent import LogisticsAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.regulatory_agent import RegulatoryAgent
 from app.agents.tariff_agent import TariffAgent
+from app.db.mongodb import save_analysis, get_analyses, get_analysis_by_id
 from app.utils.excel_generator import generate_excel
 from app.utils.pdf_generator import generate_pdf
 
@@ -116,7 +117,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
             gap["gap_risk_score"]            * 0.10
         )))
 
-    return {
+    response_dict = {
         "regulatory":         reg,
         "climate":            clim,
         "market":             mkt,
@@ -139,6 +140,29 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "origin":             body.origin,
         "destination":        body.destination,
     }
+
+    try:
+        analysis_id = await save_analysis({**response_dict, 'query': body.query})
+        response_dict['analysis_id'] = analysis_id
+    except Exception as e:
+        print(f"Failed to save analysis: {e}")
+        response_dict['analysis_id'] = None
+
+    return response_dict
+
+
+@router.get("/history")
+async def get_history(limit: int = 20) -> list:
+    return await get_analyses(limit)
+
+
+@router.get("/history/{analysis_id}")
+async def get_analysis(analysis_id: str) -> dict:
+    doc = await get_analysis_by_id(analysis_id)
+    if not doc:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    return doc
 
 
 @router.post("/export/pdf")

@@ -5,8 +5,9 @@ import LandingScreen from './components/LandingScreen';
 import type { LandingParams } from './components/LandingScreen';
 import ProcessingScreen from './components/ProcessingScreen';
 import DashboardScreen from './components/DashboardScreen';
+import HistoryScreen from './components/HistoryScreen';
 
-type Screen = 'landing' | 'processing' | 'dashboard';
+type Screen = 'landing' | 'processing' | 'dashboard' | 'history';
 
 export default function App() {
   const [screen,         setScreen]         = useState<Screen>('landing');
@@ -65,6 +66,22 @@ export default function App() {
     );
   }
 
+  if (screen === 'history') {
+    return (
+      <HistoryScreen
+        onBack={() => setScreen(result ? 'dashboard' : 'landing')}
+        onSelectAnalysis={(data) => {
+          setResult(data);
+          setCommodity(data.commodity);
+          setOrigin(data.origin);
+          setDestination(data.destination);
+          setTradeDirection(data.trade_direction ?? 'export');
+          setScreen('dashboard');
+        }}
+      />
+    );
+  }
+
   if (screen === 'dashboard' && result) {
     return (
       <DashboardScreen
@@ -75,6 +92,7 @@ export default function App() {
         destination={destination}
         tradeDirection={tradeDirection}
         onNewAnalysis={() => setScreen('landing')}
+        onHistory={() => setScreen('history')}
       />
     );
   }

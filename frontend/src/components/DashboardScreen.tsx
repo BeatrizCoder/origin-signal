@@ -43,6 +43,13 @@ const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 const fmtBRL = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function dimColor(v: number): string {
   if (v >= 70) return '#F87171';
   if (v >= 40) return '#FBBF24';
@@ -97,9 +104,10 @@ interface Props {
   destination: string;
   tradeDirection: 'export' | 'import';
   onNewAnalysis: () => void;
+  onHistory: () => void;
 }
 
-export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis }: Props) {
+export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('analysis');
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const { t } = useLanguage();
@@ -213,18 +221,33 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               </div>
             </div>
           </div>
-          <button
-            onClick={onNewAnalysis}
-            style={{
-              background: 'none', border: `1px solid ${BORDER}`,
-              borderRadius: 4, color: TEXT_MUTED,
-              padding: '4px 9px', cursor: 'pointer',
-              fontSize: 10, fontFamily: 'ui-monospace, Consolas, monospace',
-              letterSpacing: 0.8, transition: 'color 0.15s',
-            }}
-          >
-            {t('new_analysis')}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              onClick={onHistory}
+              style={{
+                background: 'none', border: `1px solid ${BORDER}`,
+                borderRadius: 4, color: TEXT_MUTED,
+                padding: '4px 9px', cursor: 'pointer',
+                fontSize: 10, fontFamily: 'ui-monospace, Consolas, monospace',
+                letterSpacing: 0.8, transition: 'color 0.15s',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              ⏱ {t('history')}
+            </button>
+            <button
+              onClick={onNewAnalysis}
+              style={{
+                background: 'none', border: `1px solid ${BORDER}`,
+                borderRadius: 4, color: TEXT_MUTED,
+                padding: '4px 9px', cursor: 'pointer',
+                fontSize: 10, fontFamily: 'ui-monospace, Consolas, monospace',
+                letterSpacing: 0.8, transition: 'color 0.15s',
+              }}
+            >
+              {t('new_analysis')}
+            </button>
+          </div>
         </div>
 
         {/* Export buttons */}
@@ -631,9 +654,14 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{
-                          fontSize: 9, fontWeight: 700, letterSpacing: 1,
+                          display: 'inline-flex',
+                          fontSize: 8, fontWeight: 700, letterSpacing: '0.08em',
+                          padding: '1px 6px', borderRadius: 10,
+                          background: hexToRgba(col, 0.12),
+                          border: `0.5px solid ${hexToRgba(col, 0.3)}`,
+                          color: col,
                           fontFamily: 'ui-monospace, Consolas, monospace',
-                          color: col, textTransform: 'uppercase' as const,
+                          textTransform: 'uppercase' as const,
                         }}>{risk.severity}</span>
                         <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{risk.title}</span>
                       </div>
@@ -694,11 +722,15 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                       fontFamily: 'ui-monospace, Consolas, monospace',
                     }}>{t('recommended_actions')}</div>
                     {exec.recommended_actions.map((act, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start' }}>
                         <span style={{
-                          fontSize: 9, fontWeight: 700, color: '#000',
-                          background: AMBER, borderRadius: 3,
-                          padding: '2px 7px', flexShrink: 0, marginTop: 2,
+                          display: 'inline-flex',
+                          fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
+                          padding: '2px 7px', borderRadius: 10,
+                          background: hexToRgba(AMBER, 0.12),
+                          border: `0.5px solid ${hexToRgba(AMBER, 0.3)}`,
+                          color: AMBER,
+                          marginRight: 8, marginTop: 2, flexShrink: 0,
                           fontFamily: 'ui-monospace, Consolas, monospace',
                           whiteSpace: 'nowrap' as const,
                         }}>{act.timeline}</span>

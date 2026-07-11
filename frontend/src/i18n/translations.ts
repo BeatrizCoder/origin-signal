@@ -64,6 +64,11 @@ export const translations = {
     country_colombia: 'Colombia',
     country_peru: 'Peru',
     country_chile: 'Chile',
+    history: 'History',
+    analysis_history: 'ANALYSIS HISTORY',
+    view_full_analysis: 'View Full Analysis',
+    no_history: 'No analyses yet. Run your first analysis to see history here.',
+    back: '← Back',
   },
   PT: {
     subtitle: 'INTELIGÊNCIA DE RISCO COMERCIAL · BR→UE',
@@ -130,6 +135,11 @@ export const translations = {
     country_colombia: 'Colômbia',
     country_peru: 'Peru',
     country_chile: 'Chile',
+    history: 'Histórico',
+    analysis_history: 'HISTÓRICO DE ANÁLISES',
+    view_full_analysis: 'Ver Análise Completa',
+    no_history: 'Nenhuma análise ainda. Execute sua primeira análise para ver o histórico.',
+    back: '← Voltar',
   },
 } as const;
 
