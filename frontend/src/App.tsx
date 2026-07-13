@@ -6,8 +6,9 @@ import type { LandingParams } from './components/LandingScreen';
 import ProcessingScreen from './components/ProcessingScreen';
 import DashboardScreen from './components/DashboardScreen';
 import HistoryScreen from './components/HistoryScreen';
+import ComparatorScreen from './components/ComparatorScreen';
 
-type Screen = 'landing' | 'processing' | 'dashboard' | 'history';
+type Screen = 'landing' | 'processing' | 'dashboard' | 'history' | 'comparator';
 
 export default function App() {
   const [screen,         setScreen]         = useState<Screen>('landing');
@@ -82,6 +83,10 @@ export default function App() {
     );
   }
 
+  if (screen === 'comparator') {
+    return <ComparatorScreen onBack={() => setScreen(result ? 'dashboard' : 'landing')} />;
+  }
+
   if (screen === 'dashboard' && result) {
     return (
       <DashboardScreen
@@ -93,9 +98,10 @@ export default function App() {
         tradeDirection={tradeDirection}
         onNewAnalysis={() => setScreen('landing')}
         onHistory={() => setScreen('history')}
+        onCompare={() => setScreen('comparator')}
       />
     );
   }
 
-  return <LandingScreen onAnalyze={handleAnalyze} />;
+  return <LandingScreen onAnalyze={handleAnalyze} onCompare={() => setScreen('comparator')} />;
 }

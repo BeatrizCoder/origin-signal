@@ -57,7 +57,7 @@ function dimColor(v: number): string {
 }
 
 const AMBER_BTN_STYLE: React.CSSProperties = {
-  flex: 1,
+  flex: '0 1 auto',
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
   background: 'transparent',
   border: '0.5px solid rgba(212,144,10,0.4)',
@@ -125,9 +125,10 @@ interface Props {
   tradeDirection: 'export' | 'import';
   onNewAnalysis: () => void;
   onHistory: () => void;
+  onCompare: () => void;
 }
 
-export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory }: Props) {
+export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory, onCompare }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('analysis');
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const { t } = useLanguage();
@@ -241,7 +242,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
             <button
               onClick={onHistory}
               style={AMBER_BTN_STYLE}
@@ -249,6 +250,14 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               onMouseLeave={e => handleAmberHover(e, false)}
             >
               ⏱ {t('history')}
+            </button>
+            <button
+              onClick={onCompare}
+              style={AMBER_BTN_STYLE}
+              onMouseEnter={e => handleAmberHover(e, true)}
+              onMouseLeave={e => handleAmberHover(e, false)}
+            >
+              ⇄ {t('compare_routes')}
             </button>
             <button
               onClick={onNewAnalysis}

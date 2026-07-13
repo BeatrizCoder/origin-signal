@@ -156,6 +156,35 @@ export interface HistoryItem {
   tariff_score: number;
 }
 
+export interface RouteComparison {
+  origin: string;
+  tariff: TariffResult;
+  logistics: LogisticsResult;
+  total_risk_score: number;
+  landed_cost_brl: number;
+  transit_days: number;
+  trade_agreement: string;
+  ii_reduction_pct: number;
+  savings_vs_worst?: number;
+  verdict: 'best' | 'mid' | 'worst' | 'only';
+}
+
+export interface CompareRequest {
+  commodity: string;
+  destination: string;
+  origins: string[];
+  trade_direction: string;
+  cif_value_usd: number;
+}
+
+export interface CompareResponse {
+  comparisons: RouteComparison[];
+  commodity: string;
+  destination: string;
+  cif_value_usd: number;
+  recommendation: string;
+}
+
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export function getRiskLevel(score: number): RiskLevel {

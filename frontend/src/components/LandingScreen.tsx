@@ -18,6 +18,7 @@ export interface LandingParams {
 
 interface Props {
   onAnalyze: (params: LandingParams) => void;
+  onCompare: () => void;
 }
 
 const AMBER      = '#D4900A';
@@ -113,7 +114,7 @@ const selectStyle: React.CSSProperties = {
   boxSizing: 'border-box', cursor: 'pointer',
 };
 
-export default function LandingScreen({ onAnalyze }: Props) {
+export default function LandingScreen({ onAnalyze, onCompare }: Props) {
   const [commodity,       setCommodity]       = useState('coffee');
   const [destination,     setDestination]     = useState('European Union');
   const [importOrigin,    setImportOrigin]    = useState('United States');
@@ -330,6 +331,19 @@ export default function LandingScreen({ onAnalyze }: Props) {
           }}
         >
           {t('analyze_btn')}
+        </button>
+
+        <button
+          type="button"
+          onClick={onCompare}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 11, color: TEXT_MUTED, letterSpacing: 0.5,
+            fontFamily: 'ui-monospace, Consolas, monospace',
+            textAlign: 'center' as const, padding: 0,
+          }}
+        >
+          {t('compare_routes')} →
         </button>
       </form>
 

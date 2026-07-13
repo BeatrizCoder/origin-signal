@@ -53,6 +53,14 @@ class AnalyzeRequest(BaseModel):
     trade_direction: str = "export"
 
 
+class CompareRequest(BaseModel):
+    commodity: str
+    destination: str
+    origins: list[str]
+    trade_direction: str = "import"
+    cif_value_usd: float = 10000
+
+
 @router.get("/health")
 async def health():
     return {"status": "ok"}
@@ -149,6 +157,67 @@ async def analyze(body: AnalyzeRequest) -> dict:
         response_dict['analysis_id'] = None
 
     return response_dict
+
+
+@router.post("/compare")
+async def compare_routes(body: CompareRequest) -> dict:
+
+    # Roda tariff + logistics para cada origem em paralelo
+    tasks = []
+    for origin in body.origins:
+        tasks.append(asyncio.gather(
+            _tariff.analyze(body.commodity, origin, body.cif_value_usd),
+            _logistics.analyze(origin, body.destination, body.commodity, body.trade_direction),
+        ))
+
+    results = await asyncio.gather(*tasks)
+
+    comparisons = []
+    for i, origin in enumerate(body.origins):
+        tariff, logistics = results[i]
+        comparisons.append({
+            'origin': origin,
+            'tariff': tariff,
+            'logistics': logistics,
+            'total_risk_score': round(tariff['tariff_risk_score'] * 0.5 + logistics['logistics_risk_score'] * 0.5),
+            'landed_cost_brl': tariff['calculation'].get('total_landed_brl', 0),
+            'transit_days': logistics.get('estimated_transit_days', 0),
+            'trade_agreement': tariff.get('trade_agreement', 'WTO/MFN'),
+            'ii_reduction_pct': tariff.get('ii_reduction_pct', 0),
+        })
+
+    # Ordena por custo landed
+    comparisons.sort(key=lambda x: x['landed_cost_brl'])
+
+    # Marca melhor e pior
+    if comparisons:
+        comparisons[0]['verdict'] = 'best'
+        comparisons[-1]['verdict'] = 'worst' if len(comparisons) > 1 else 'only'
+        for c in comparisons[1:-1]:
+            c['verdict'] = 'mid'
+
+    # Calcula savings vs pior opção
+    if len(comparisons) > 1:
+        worst_cost = comparisons[-1]['landed_cost_brl']
+        for c in comparisons:
+            c['savings_vs_worst'] = round(worst_cost - c['landed_cost_brl'], 2)
+
+    # AI recommendation
+    best = comparisons[0] if comparisons else {}
+    recommendation = (
+        f"{best.get('origin')} is the optimal sourcing origin — "
+        f"R$ {best.get('landed_cost_brl', 0):,.0f} landed cost "
+        f"({best.get('transit_days')} days transit) under {best.get('trade_agreement')}. "
+        f"Tax burden {best['tariff']['calculation'].get('tax_burden_pct', 0):.1f}% of CIF value."
+    ) if best else ""
+
+    return {
+        'comparisons': comparisons,
+        'commodity': body.commodity,
+        'destination': body.destination,
+        'cif_value_usd': body.cif_value_usd,
+        'recommendation': recommendation,
+    }
 
 
 @router.get("/history")
