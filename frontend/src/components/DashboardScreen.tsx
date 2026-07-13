@@ -135,9 +135,10 @@ interface Props {
   onNewAnalysis: () => void;
   onHistory: () => void;
   onCompare: () => void;
+  onOptimize: () => void;
 }
 
-export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory, onCompare }: Props) {
+export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory, onCompare, onOptimize }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('analysis');
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const { t } = useLanguage();
@@ -267,6 +268,14 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               onMouseLeave={e => handleAmberHover(e, false)}
             >
               ⇄ {t('compare_routes')}
+            </button>
+            <button
+              onClick={onOptimize}
+              style={AMBER_BTN_STYLE}
+              onMouseEnter={e => handleAmberHover(e, true)}
+              onMouseLeave={e => handleAmberHover(e, false)}
+            >
+              ⬡ {t('optimize')}
             </button>
             <button
               onClick={onNewAnalysis}

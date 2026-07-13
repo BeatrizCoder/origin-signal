@@ -198,6 +198,30 @@ export interface PropagationData {
   insight: string;
 }
 
+export interface OptimizationRegion {
+  region: string;
+  cost_brl_k: number;
+  unlock_kt: number;
+  current_risk: number;
+  roi: number;
+  priority: number;
+}
+
+export interface OptimizationResult {
+  budget_brl: number;
+  budget_used_brl: number;
+  budget_remaining_brl: number;
+  selected_regions: OptimizationRegion[];
+  excluded_regions: OptimizationRegion[];
+  total_regions_selected: number;
+  total_unlock_kt: number;
+  current_hes: number;
+  projected_hes: number;
+  hes_gain: number;
+  roi_summary: string;
+  mathematical_basis: string;
+}
+
 export interface RouteComparison {
   origin: string;
   tariff: TariffResult;

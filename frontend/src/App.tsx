@@ -7,8 +7,9 @@ import ProcessingScreen from './components/ProcessingScreen';
 import DashboardScreen from './components/DashboardScreen';
 import HistoryScreen from './components/HistoryScreen';
 import ComparatorScreen from './components/ComparatorScreen';
+import OptimizationScreen from './components/OptimizationScreen';
 
-type Screen = 'landing' | 'processing' | 'dashboard' | 'history' | 'comparator';
+type Screen = 'landing' | 'processing' | 'dashboard' | 'history' | 'comparator' | 'optimization';
 
 export default function App() {
   const [screen,         setScreen]         = useState<Screen>('landing');
@@ -87,6 +88,10 @@ export default function App() {
     return <ComparatorScreen onBack={() => setScreen(result ? 'dashboard' : 'landing')} />;
   }
 
+  if (screen === 'optimization') {
+    return <OptimizationScreen onBack={() => setScreen(result ? 'dashboard' : 'landing')} />;
+  }
+
   if (screen === 'dashboard' && result) {
     return (
       <DashboardScreen
@@ -99,6 +104,7 @@ export default function App() {
         onNewAnalysis={() => setScreen('landing')}
         onHistory={() => setScreen('history')}
         onCompare={() => setScreen('comparator')}
+        onOptimize={() => setScreen('optimization')}
       />
     );
   }

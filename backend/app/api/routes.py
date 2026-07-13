@@ -241,6 +241,14 @@ async def get_honeycomb_score(commodity: str) -> dict:
     return calculate_hes(commodity)
 
 
+@router.post("/optimize")
+async def optimize_routes(payload: dict) -> dict:
+    from app.agents.gap_agent import optimize_honeycomb
+    budget = payload.get('budget_brl', 500000)
+    commodity = payload.get('commodity', 'coffee')
+    return optimize_honeycomb(budget, commodity)
+
+
 @router.get("/history")
 async def get_history(limit: int = 20) -> list:
     return await get_analyses(limit)
