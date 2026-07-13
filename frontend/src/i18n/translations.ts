@@ -90,6 +90,12 @@ export const translations = {
     hes_low: 'Low',
     hes_moderate: 'Moderate',
     hes_good: 'Good',
+    propagation_title: 'CELLULAR RISK PROPAGATION',
+    propagation_tooltip: 'Risk propagates between adjacent hexagonal cells — geographic proximity follows honeycomb adjacency structure.',
+    propagation_active: 'PROPAGATION ACTIVE',
+    propagation_stable: 'NO PROPAGATION DETECTED',
+    propagated_from: 'Risk propagated from',
+    most_affected: 'MOST AFFECTED CELLS',
   },
   PT: {
     subtitle: 'INTELIGÊNCIA DE RISCO COMERCIAL · BR→UE',
@@ -182,6 +188,12 @@ export const translations = {
     hes_low: 'Baixo',
     hes_moderate: 'Moderado',
     hes_good: 'Bom',
+    propagation_title: 'PROPAGAÇÃO DE RISCO CELULAR',
+    propagation_tooltip: 'Risco se propaga entre células hexagonais adjacentes — proximidade geográfica segue estrutura de adjacência do favo de mel.',
+    propagation_active: 'PROPAGAÇÃO ATIVA',
+    propagation_stable: 'NENHUMA PROPAGAÇÃO DETECTADA',
+    propagated_from: 'Risco propagado de',
+    most_affected: 'CÉLULAS MAIS AFETADAS',
   },
 } as const;
 

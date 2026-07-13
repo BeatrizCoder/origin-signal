@@ -36,6 +36,8 @@ const HES_COLORS: Record<string, { bg: string; text: string }> = {
   Good:     { bg: '#0D3321', text: '#34D399' },
 };
 
+const ORANGE = '#FB923C';
+
 const AGENTS = [
   'Climate Engine',
   'Regulatory Engine',
@@ -492,7 +494,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
           padding:   activeTab === 'map' ? 0 : '24px 28px 60px',
         }}>
 
-          {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} tradeDirection={tradeDirection} />}
+          {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} tradeDirection={tradeDirection} propagationData={result.propagation} />}
 
           {activeTab === 'analysis' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
@@ -776,6 +778,77 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                       <span style={{ color: AMBER, flexShrink: 0 }}>⬡</span>
                       <span>{hc.insight}</span>
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── Cellular Risk Propagation ── */}
+              {result.propagation && (() => {
+                const prop = result.propagation!;
+                const badgeCol = prop.propagation_active
+                  ? { bg: '#3D1F00', text: ORANGE }
+                  : { bg: '#0D3321', text: '#34D399' };
+
+                return (
+                  <div style={{
+                    background: SURFACE, border: `1px solid ${BORDER}`,
+                    borderRadius: 8, padding: '20px 24px',
+                    display: 'flex', flexDirection: 'column', gap: 14,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: AMBER,
+                        textTransform: 'uppercase' as const,
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                      }}>⬡ {t('propagation_title')}</span>
+                      <span title={t('propagation_tooltip')} style={{
+                        fontSize: 10, color: TEXT_MUTED, cursor: 'help',
+                        border: `1px solid ${BORDER}`, borderRadius: '50%',
+                        width: 14, height: 14, display: 'inline-flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>?</span>
+                    </div>
+
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: 1,
+                      padding: '3px 8px', borderRadius: 3, alignSelf: 'flex-start',
+                      background: badgeCol.bg, color: badgeCol.text,
+                      fontFamily: 'ui-monospace, Consolas, monospace',
+                    }}>{prop.propagation_active ? t('propagation_active') : t('propagation_stable')}</span>
+
+                    {prop.propagation_active ? (
+                      <>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{
+                            fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: TEXT_MUTED,
+                            textTransform: 'uppercase' as const,
+                            fontFamily: 'ui-monospace, Consolas, monospace',
+                          }}>{t('most_affected')}</div>
+                          {prop.most_affected_by_propagation.map((m, i) => (
+                            <div key={i} style={{ fontSize: 12, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                              {m.region} ({m.composite_score}) {m.risk_sources.length > 0 && (
+                                <span style={{ color: TEXT_MUTED }}>← {t('propagated_from')} {m.risk_sources.join(' + ')}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{
+                          background: `${AMBER}0D`, border: `1px solid ${AMBER}33`,
+                          borderRadius: 6, padding: '14px 16px',
+                          fontSize: 13, color: TEXT, lineHeight: 1.7,
+                          display: 'flex', gap: 10, alignItems: 'flex-start',
+                        }}>
+                          <span style={{ color: AMBER, flexShrink: 0 }}>⬡</span>
+                          <span>{prop.insight}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 12, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                        Adjacent cells show stable risk patterns
+                      </div>
+                    )}
                   </div>
                 );
               })()}

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.agents.climate_agent import ClimateAgent
 from app.agents.executive_agent import ExecutiveAgent
-from app.agents.gap_agent import GapAgent, calculate_hes
+from app.agents.gap_agent import GapAgent, REGION_ADJACENCY, REGION_RISK_SCORES, calculate_hes, calculate_propagation
 from app.agents.logistics_agent import LogisticsAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.regulatory_agent import RegulatoryAgent
@@ -127,6 +127,18 @@ async def analyze(body: AnalyzeRequest) -> dict:
 
     honeycomb = calculate_hes(body.commodity)
 
+    base_scores = {
+        region: {
+            'regulatory': REGION_RISK_SCORES.get(region, 50),
+            'climate': clim.get('climate_risk_score', 50),
+            'market': mkt.get('market_risk_score', 50),
+            'logistics': logi.get('logistics_risk_score', 20),
+            'gap': gap.get('gap_risk_score', 50)
+        }
+        for region in REGION_ADJACENCY
+    }
+    propagation = calculate_propagation(base_scores, body.commodity)
+
     response_dict = {
         "regulatory":         reg,
         "climate":            clim,
@@ -135,6 +147,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "gap":                gap,
         "tariff":             tariff,
         "honeycomb":          honeycomb,
+        "propagation":        propagation,
         "executive":          executive,
         "overall_risk_score": overall,
         "export_readiness":   100 - overall,

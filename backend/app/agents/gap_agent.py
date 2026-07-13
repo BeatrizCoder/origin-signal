@@ -34,6 +34,113 @@ REGION_RISK_SCORES = {
     'Sul ES': 48,
 }
 
+# Mapa de adjacência — cada região e suas vizinhas geográficas reais
+REGION_ADJACENCY = {
+    'Cerrado Mineiro': ['Triângulo MG', 'Sul de Minas', 'Zona da Mata', 'Oeste da Bahia'],
+    'Sul de Minas': ['Cerrado Mineiro', 'Mogiana', 'Zona da Mata'],
+    'Chapada Diamantina': ['Oeste da Bahia'],
+    'Mogiana': ['Sul de Minas', 'Norte PR'],
+    'Zona da Mata': ['Cerrado Mineiro', 'Sul de Minas', 'Sul ES'],
+    'Norte PR': ['Mogiana', 'Serra Gaúcha'],
+    'Triângulo MG': ['Cerrado Mineiro', 'Rondônia'],
+    'Serra Gaúcha': ['Norte PR', 'Planalto Sul'],
+    'Rondônia': ['Triângulo MG'],
+    'Planalto Sul': ['Serra Gaúcha'],
+    'Oeste da Bahia': ['Cerrado Mineiro', 'Chapada Diamantina'],
+    'Sul ES': ['Zona da Mata'],
+}
+
+# Fatores de propagação por tipo de risco
+PROPAGATION_FACTORS = {
+    'climate': 0.35,      # seca/chuva se propaga forte entre vizinhos
+    'regulatory': 0.10,   # regulação tem algum efeito regional
+    'market': 0.20,       # preço de mercado propaga moderadamente
+    'logistics': 0.05,    # logística pouco se propaga
+}
+
+
+def calculate_propagation(
+    region_scores: dict,  # {region: {regulatory, climate, market, logistics}}
+    commodity: str = 'coffee'
+) -> dict:
+
+    propagated = {}
+
+    for region in REGION_ADJACENCY:
+        neighbors = REGION_ADJACENCY[region]
+        base = region_scores.get(region, {
+            'regulatory': REGION_RISK_SCORES.get(region, 50),
+            'climate': 50, 'market': 50, 'logistics': 20
+        })
+
+        # Calcula impacto dos vizinhos
+        neighbor_impact = {'regulatory': 0, 'climate': 0, 'market': 0, 'logistics': 0}
+
+        for neighbor in neighbors:
+            n_scores = region_scores.get(neighbor, {
+                'regulatory': REGION_RISK_SCORES.get(neighbor, 50),
+                'climate': 50, 'market': 50, 'logistics': 20
+            })
+            for dim in ['regulatory', 'climate', 'market', 'logistics']:
+                factor = PROPAGATION_FACTORS[dim]
+                n_score = n_scores.get(dim, 50)
+                base_score = base.get(dim, 50)
+                # Propaga apenas se vizinho tem score MAIOR (risco mais alto)
+                if n_score > base_score:
+                    neighbor_impact[dim] += (n_score - base_score) * factor / len(neighbors)
+
+        # Score propagado = base + impacto dos vizinhos (max 100)
+        propagated[region] = {
+            dim: min(100, round(base.get(dim, 50) + neighbor_impact[dim]))
+            for dim in ['regulatory', 'climate', 'market', 'logistics']
+        }
+        propagated[region]['composite'] = round(
+            propagated[region]['regulatory'] * 0.30 +
+            propagated[region]['climate'] * 0.25 +
+            propagated[region]['market'] * 0.20 +
+            propagated[region]['logistics'] * 0.15 +
+            base.get('gap', 50) * 0.10
+        )
+
+        # Identifica quais vizinhos estão propagando risco
+        propagated[region]['risk_sources'] = [
+            n for n in neighbors
+            if REGION_RISK_SCORES.get(n, 50) > REGION_RISK_SCORES.get(region, 50) + 10
+        ]
+        propagated[region]['propagation_alert'] = len(propagated[region]['risk_sources']) > 0
+
+    # Regiões mais afetadas por propagação
+    most_affected = sorted(
+        [(r, propagated[r]['composite']) for r in propagated],
+        key=lambda x: x[1], reverse=True
+    )[:3]
+
+    return {
+        'region_scores': propagated,
+        'most_affected_by_propagation': [
+            {'region': r, 'composite_score': s,
+             'risk_sources': propagated[r]['risk_sources']}
+            for r, s in most_affected
+        ],
+        'propagation_active': any(
+            propagated[r]['propagation_alert'] for r in propagated
+        ),
+        'insight': generate_propagation_insight(propagated, most_affected)
+    }
+
+
+def generate_propagation_insight(propagated, most_affected):
+    alerts = [r for r in propagated if propagated[r]['propagation_alert']]
+    if not alerts:
+        return "No significant risk propagation detected between adjacent regions."
+    top = most_affected[0] if most_affected else None
+    sources = propagated[top[0]]['risk_sources'] if top else []
+    return (
+        f"{len(alerts)} regions affected by neighbor propagation. "
+        f"{top[0] if top else ''} shows elevated composite risk ({top[1] if top else 0}/100) "
+        f"influenced by adjacent {', '.join(sources[:2]) if sources else 'regions'}."
+    )
+
 
 def calculate_hes(commodity: str = 'coffee') -> dict:
     total_volume = sum(REGION_VOLUMES.values())

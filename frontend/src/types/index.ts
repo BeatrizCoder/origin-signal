@@ -119,6 +119,7 @@ export interface AnalyzeResponse {
   gap: GapResult;
   tariff?: TariffResult;
   honeycomb?: HoneycombResult;
+  propagation?: PropagationData;
   executive: ExecutiveResult;
   overall_risk_score: number;
   export_readiness: number;
@@ -177,6 +178,23 @@ export interface HoneycombResult {
   critical_cells: HoneycombCriticalCell[];
   potential_hes: number;
   potential_gain: number;
+  insight: string;
+}
+
+export interface PropagationRegion {
+  regulatory: number;
+  climate: number;
+  market: number;
+  logistics: number;
+  composite: number;
+  risk_sources: string[];
+  propagation_alert: boolean;
+}
+
+export interface PropagationData {
+  region_scores: Record<string, PropagationRegion>;
+  most_affected_by_propagation: Array<{ region: string; composite_score: number; risk_sources: string[] }>;
+  propagation_active: boolean;
   insight: string;
 }
 

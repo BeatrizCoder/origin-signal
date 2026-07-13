@@ -1,9 +1,10 @@
 import { useRef, useEffect, useState } from 'react';
 import { getRiskLevel } from '../types';
+import type { PropagationData } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
 
-type Layer = 'regulatory' | 'climate' | 'market' | 'composite';
+type Layer = 'regulatory' | 'climate' | 'market' | 'composite' | 'propagation';
 type TradeDirection = 'export' | 'import';
 
 interface RegionScores {
@@ -26,6 +27,7 @@ interface Props {
   onAnalyzeRegion?: (regionName: string) => Promise<RegionScores>;
   commodity?: string;
   tradeDirection?: TradeDirection;
+  propagationData?: PropagationData;
 }
 
 const COFFEE_REGIONS: Region[] = [
@@ -96,6 +98,7 @@ const HEX_R = 48;
 const SIDEBAR_W = 280;
 
 const AMBER      = '#D4900A';
+const ORANGE     = '#FB923C';
 const BG         = '#0B1120';
 const SIDEBAR_BG = '#0F1A2E';
 const BORDER_CSS = 'rgba(255,255,255,0.06)';
@@ -149,6 +152,32 @@ function drawHex(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
   ctx.closePath();
 }
 
+function drawArrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, r: number) {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  // stop short of both hex edges so the line doesn't run into the fills
+  const startX = x1 + Math.cos(angle) * r * 0.7;
+  const startY = y1 + Math.sin(angle) * r * 0.7;
+  const endX   = x2 - Math.cos(angle) * r * 0.7;
+  const endY   = y2 - Math.sin(angle) * r * 0.7;
+
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
+  ctx.strokeStyle = `${ORANGE}AA`;
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  const headLen = 8;
+  const headAngle = Math.PI / 7;
+  ctx.beginPath();
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(endX - headLen * Math.cos(angle - headAngle), endY - headLen * Math.sin(angle - headAngle));
+  ctx.lineTo(endX - headLen * Math.cos(angle + headAngle), endY - headLen * Math.sin(angle + headAngle));
+  ctx.closePath();
+  ctx.fillStyle = `${ORANGE}CC`;
+  ctx.fill();
+}
+
 function hitTestAt(mx: number, my: number, r: number, ox: number, oy: number, regions: Region[]): number {
   let closest = -1;
   let minDist  = Infinity;
@@ -173,7 +202,7 @@ function getVerdict(composite: number): { label: string; color: string } {
   return                      { label: 'HOLD',    color: '#F87171' };
 }
 
-export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'export' }: Props) {
+export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'export', propagationData }: Props) {
   const isImport = tradeDirection === 'import';
   const activeRegions = isImport
     ? IMPORT_ORIGINS_MAP
@@ -205,11 +234,16 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
   useEffect(() => { setSelected(null); setLiveScores({}); }, [commodity, tradeDirection]);
 
   const LAYER_LABELS: Record<Layer, string> = {
-    regulatory: t('regulatory'),
-    climate:    t('climate'),
-    market:     t('market'),
-    composite:  'Composite',
+    regulatory:  t('regulatory'),
+    climate:     t('climate'),
+    market:      t('market'),
+    composite:   'Composite',
+    propagation: 'Propagation',
   };
+
+  const visibleLayers: Layer[] = propagationData
+    ? ['regulatory', 'climate', 'market', 'composite', 'propagation']
+    : ['regulatory', 'climate', 'market', 'composite'];
 
   const DIM_LABELS: Array<{ key: keyof RegionScores; label: string }> = [
     { key: 'regulatory', label: t('regulatory') },
@@ -252,7 +286,8 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
     for (const region of activeRegions) {
       const [cx, cy]   = hexCenterAt(region.col, region.row, r, ox, oy);
       const scores     = getRegionScores(region);
-      const score      = getLayerScore(scores, layer);
+      const propRegion = propagationData?.region_scores[region.name];
+      const score      = layer === 'propagation' && propRegion ? propRegion.composite : getLayerScore(scores, layer);
       const color      = getColor(score);
       const isSelected = selected?.id === region.id;
       const isHov      = hovered === region.id;
@@ -308,6 +343,30 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
         ctx.lineWidth   = 1.5;
         ctx.stroke();
       }
+
+      if (propRegion?.propagation_alert) {
+        ctx.beginPath();
+        ctx.arc(cx - r * 0.55, cy - r * 0.62, 5, 0, Math.PI * 2);
+        ctx.fillStyle   = ORANGE;
+        ctx.fill();
+        ctx.strokeStyle = BG;
+        ctx.lineWidth   = 1.5;
+        ctx.stroke();
+      }
+    }
+
+    if (layer === 'propagation' && propagationData) {
+      for (const region of activeRegions) {
+        const propRegion = propagationData.region_scores[region.name];
+        if (!propRegion?.propagation_alert) continue;
+        const [tx, ty] = hexCenterAt(region.col, region.row, r, ox, oy);
+        for (const sourceName of propRegion.risk_sources) {
+          const source = activeRegions.find(reg => reg.name === sourceName);
+          if (!source) continue;
+          const [sx, sy] = hexCenterAt(source.col, source.row, r, ox, oy);
+          drawArrow(ctx, sx, sy, tx, ty, r);
+        }
+      }
     }
   }
 
@@ -316,7 +375,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
   useEffect(() => {
     if (!analyzingRegion) drawRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layer, selected, hovered, liveScores, analyzingRegion, commodity, tradeDirection, language]);
+  }, [layer, selected, hovered, liveScores, analyzingRegion, commodity, tradeDirection, language, propagationData]);
 
   useEffect(() => {
     const observer = new ResizeObserver(() => drawRef.current());
@@ -408,7 +467,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
           position: 'absolute', top: 16, left: 16, zIndex: 10,
           display: 'flex', gap: 8,
         }}>
-          {(Object.keys(LAYER_LABELS) as Layer[]).map(l => (
+          {visibleLayers.map(l => (
             <button
               key={l}
               onClick={() => setLayer(l)}
@@ -555,6 +614,24 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
                 );
               })}
             </div>
+
+            {/* Propagation alert */}
+            {selected && propagationData?.region_scores[selected.name]?.propagation_alert && (
+              <div style={{
+                background: `${ORANGE}1A`, border: `1px solid ${ORANGE}44`,
+                borderRadius: 6, padding: '10px 12px',
+                display: 'flex', flexDirection: 'column', gap: 4,
+              }}>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: ORANGE,
+                  textTransform: 'uppercase' as const,
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                }}>⤳ PROPAGATION ALERT</span>
+                <span style={{ fontSize: 11, color: TEXT, lineHeight: 1.5 }}>
+                  {t('propagated_from')}: {propagationData.region_scores[selected.name]!.risk_sources.join(', ')}
+                </span>
+              </div>
+            )}
 
             {/* Live data attribution */}
             {isSelectedLive && (
