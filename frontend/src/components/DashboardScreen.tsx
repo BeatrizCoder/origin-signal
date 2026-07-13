@@ -29,6 +29,13 @@ const SEV_COLORS: Record<string, string> = {
   medium:   '#34D399',
 };
 
+const HES_COLORS: Record<string, { bg: string; text: string }> = {
+  Critical: { bg: '#2D0D0D', text: '#F87171' },
+  Low:      { bg: '#3D1F00', text: '#FB923C' },
+  Moderate: { bg: '#2D1F00', text: '#FBBF24' },
+  Good:     { bg: '#0D3321', text: '#34D399' },
+};
+
 const AGENTS = [
   'Climate Engine',
   'Regulatory Engine',
@@ -652,6 +659,126 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   })()}
                 </div>
               )}
+
+              {/* ── Honeycomb Efficiency Score ── */}
+              {result.honeycomb && (() => {
+                const hc = result.honeycomb!;
+                const hesCol = HES_COLORS[hc.hes_label];
+                const hesLabelText = hc.hes_label === 'Critical' ? t('hes_critical')
+                  : hc.hes_label === 'Low' ? t('hes_low')
+                  : hc.hes_label === 'Moderate' ? t('hes_moderate')
+                  : t('hes_good');
+                const unlockKt = Math.round(hc.critical_cells.reduce((sum, c) => sum + c.volume_kt, 0) * 10) / 10;
+
+                return (
+                  <div style={{
+                    background: SURFACE, border: `1px solid ${BORDER}`,
+                    borderRadius: 8, padding: '20px 24px',
+                    display: 'flex', flexDirection: 'column', gap: 18,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: AMBER,
+                        textTransform: 'uppercase' as const,
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                      }}>⬡ {t('hes_title')}</span>
+                      <span title={t('hes_tooltip')} style={{
+                        fontSize: 10, color: TEXT_MUTED, cursor: 'help',
+                        border: `1px solid ${BORDER}`, borderRadius: '50%',
+                        width: 14, height: 14, display: 'inline-flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>?</span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
+                      {/* Left — main score */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                          <span style={{
+                            fontFamily: 'ui-monospace, Consolas, monospace',
+                            fontSize: 40, fontWeight: 700, color: hesCol.text, lineHeight: 1,
+                          }}>{hc.hes_score}%</span>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, letterSpacing: 1,
+                            padding: '3px 8px', borderRadius: 3,
+                            background: hesCol.bg, color: hesCol.text,
+                            fontFamily: 'ui-monospace, Consolas, monospace',
+                          }}>{hesLabelText.toUpperCase()}</span>
+                        </div>
+                        <div style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: TEXT_MUTED,
+                          textTransform: 'uppercase' as const,
+                          fontFamily: 'ui-monospace, Consolas, monospace',
+                        }}>{t('volume_safe_cells')}</div>
+                        <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${hc.hes_score}%`, background: AMBER, borderRadius: 3 }} />
+                        </div>
+                        <div style={{ fontSize: 11, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                          {t('potential_gain')}: <span style={{ color: AMBER_LIGHT, fontWeight: 700 }}>{hc.potential_hes}%</span> (+{hc.potential_gain}pp)
+                        </div>
+                      </div>
+
+                      {/* Right — breakdown */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {[
+                          { icon: '🔴', label: 'High risk', vol: hc.high_risk_volume_kt, cells: hc.high_risk_cells },
+                          { icon: '🟡', label: 'Mid risk',  vol: hc.mid_risk_volume_kt,  cells: hc.mid_risk_cells },
+                          { icon: '🟢', label: 'Low risk',  vol: hc.low_risk_volume_kt,  cells: hc.low_risk_cells },
+                        ].map(row => (
+                          <div key={row.label} style={{
+                            display: 'flex', justifyContent: 'space-between',
+                            fontSize: 12, fontFamily: 'ui-monospace, Consolas, monospace',
+                          }}>
+                            <span style={{ color: TEXT }}>{row.icon} {row.label}</span>
+                            <span style={{ color: TEXT_MUTED }}>{row.vol} kt ({row.cells} cells)</span>
+                          </div>
+                        ))}
+                        <div style={{ height: 1, background: BORDER, margin: '4px 0' }} />
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          fontSize: 12, fontWeight: 700, fontFamily: 'ui-monospace, Consolas, monospace',
+                        }}>
+                          <span style={{ color: TEXT_MUTED }}>Total</span>
+                          <span style={{ color: TEXT }}>{hc.total_volume_kt} kt</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Critical cells */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: TEXT_MUTED,
+                        textTransform: 'uppercase' as const,
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                      }}>{t('critical_cells')}</div>
+                      {hc.critical_cells.map((c, i) => (
+                        <div key={i} style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          fontSize: 12, fontFamily: 'ui-monospace, Consolas, monospace',
+                        }}>
+                          <span style={{ color: TEXT }}>{c.region}</span>
+                          <span style={{ color: TEXT_MUTED }}>Risk {c.risk_score} · {c.volume_kt} kt</span>
+                        </div>
+                      ))}
+                      <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>
+                        +{unlockKt} {t('unlock_exports')}
+                      </div>
+                    </div>
+
+                    {/* Insight box */}
+                    <div style={{
+                      background: `${AMBER}0D`, border: `1px solid ${AMBER}33`,
+                      borderRadius: 6, padding: '14px 16px',
+                      fontSize: 13, color: TEXT, lineHeight: 1.7,
+                      display: 'flex', gap: 10, alignItems: 'flex-start',
+                    }}>
+                      <span style={{ color: AMBER, flexShrink: 0 }}>⬡</span>
+                      <span>{hc.insight}</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* ── Executive Intelligence Briefing ── */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

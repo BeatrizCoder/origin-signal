@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.agents.climate_agent import ClimateAgent
 from app.agents.executive_agent import ExecutiveAgent
-from app.agents.gap_agent import GapAgent
+from app.agents.gap_agent import GapAgent, calculate_hes
 from app.agents.logistics_agent import LogisticsAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.regulatory_agent import RegulatoryAgent
@@ -125,6 +125,8 @@ async def analyze(body: AnalyzeRequest) -> dict:
             gap["gap_risk_score"]            * 0.10
         )))
 
+    honeycomb = calculate_hes(body.commodity)
+
     response_dict = {
         "regulatory":         reg,
         "climate":            clim,
@@ -132,6 +134,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "logistics":          logi,
         "gap":                gap,
         "tariff":             tariff,
+        "honeycomb":          honeycomb,
         "executive":          executive,
         "overall_risk_score": overall,
         "export_readiness":   100 - overall,
@@ -218,6 +221,11 @@ async def compare_routes(body: CompareRequest) -> dict:
         'cif_value_usd': body.cif_value_usd,
         'recommendation': recommendation,
     }
+
+
+@router.get("/honeycomb/{commodity}")
+async def get_honeycomb_score(commodity: str) -> dict:
+    return calculate_hes(commodity)
 
 
 @router.get("/history")

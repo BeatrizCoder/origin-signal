@@ -118,6 +118,7 @@ export interface AnalyzeResponse {
   logistics: LogisticsResult;
   gap: GapResult;
   tariff?: TariffResult;
+  honeycomb?: HoneycombResult;
   executive: ExecutiveResult;
   overall_risk_score: number;
   export_readiness: number;
@@ -154,6 +155,29 @@ export interface HistoryItem {
   market_score: number;
   logistics_score: number;
   tariff_score: number;
+}
+
+export interface HoneycombCriticalCell {
+  region: string;
+  risk_score: number;
+  volume_kt: number;
+}
+
+export interface HoneycombResult {
+  hes_score: number;
+  hes_label: 'Critical' | 'Low' | 'Moderate' | 'Good';
+  total_volume_kt: number;
+  low_risk_volume_kt: number;
+  mid_risk_volume_kt: number;
+  high_risk_volume_kt: number;
+  low_risk_cells: number;
+  mid_risk_cells: number;
+  high_risk_cells: number;
+  total_cells: number;
+  critical_cells: HoneycombCriticalCell[];
+  potential_hes: number;
+  potential_gain: number;
+  insight: string;
 }
 
 export interface RouteComparison {
