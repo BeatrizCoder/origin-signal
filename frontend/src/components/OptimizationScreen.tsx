@@ -51,9 +51,10 @@ function priorityBadgeStyle(priority: number): { bg: string; text: string } {
 
 interface Props {
   onBack: () => void;
+  onAuditPath: () => void;
 }
 
-export default function OptimizationScreen({ onBack }: Props) {
+export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
   const [commodity, setCommodity] = useState('coffee');
   const [budget,    setBudget]    = useState(500_000);
   const [loading,   setLoading]   = useState(false);
@@ -361,6 +362,18 @@ export default function OptimizationScreen({ onBack }: Props) {
                 })}
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={onAuditPath}
+              style={{
+                alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 12, color: TEXT_MUTED, letterSpacing: 0.5,
+                fontFamily: 'ui-monospace, Consolas, monospace', padding: 0,
+              }}
+            >
+              {t('audit_path')} →
+            </button>
           </div>
         )}
       </main>

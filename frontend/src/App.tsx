@@ -8,8 +8,9 @@ import DashboardScreen from './components/DashboardScreen';
 import HistoryScreen from './components/HistoryScreen';
 import ComparatorScreen from './components/ComparatorScreen';
 import OptimizationScreen from './components/OptimizationScreen';
+import AuditPathScreen from './components/AuditPathScreen';
 
-type Screen = 'landing' | 'processing' | 'dashboard' | 'history' | 'comparator' | 'optimization';
+type Screen = 'landing' | 'processing' | 'dashboard' | 'history' | 'comparator' | 'optimization' | 'audit-path';
 
 export default function App() {
   const [screen,         setScreen]         = useState<Screen>('landing');
@@ -89,7 +90,16 @@ export default function App() {
   }
 
   if (screen === 'optimization') {
-    return <OptimizationScreen onBack={() => setScreen(result ? 'dashboard' : 'landing')} />;
+    return (
+      <OptimizationScreen
+        onBack={() => setScreen(result ? 'dashboard' : 'landing')}
+        onAuditPath={() => setScreen('audit-path')}
+      />
+    );
+  }
+
+  if (screen === 'audit-path') {
+    return <AuditPathScreen onBack={() => setScreen(result ? 'dashboard' : 'landing')} />;
   }
 
   if (screen === 'dashboard' && result) {
@@ -105,6 +115,7 @@ export default function App() {
         onHistory={() => setScreen('history')}
         onCompare={() => setScreen('comparator')}
         onOptimize={() => setScreen('optimization')}
+        onAuditPath={() => setScreen('audit-path')}
       />
     );
   }

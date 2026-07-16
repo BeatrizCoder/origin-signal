@@ -222,6 +222,41 @@ export interface OptimizationResult {
   mathematical_basis: string;
 }
 
+export interface AuditStop {
+  stop: number;
+  region: string;
+  risk_score: number;
+  volume_kt: number;
+  unlock_kt: number;
+  coords: { lat: number; lon: number };
+  days_on_site: number;
+}
+
+export interface AuditRouteSegment {
+  from: string;
+  to: string;
+  distance_km: number;
+  transport: 'road' | 'flight';
+}
+
+export interface AuditPathResult {
+  target_coverage_pct: number;
+  achieved_coverage_pct: number;
+  start_region: string;
+  route: AuditStop[];
+  route_segments: AuditRouteSegment[];
+  total_distance_km: number;
+  total_stops: number;
+  audit_days: number;
+  mission_cost_brl: number;
+  eudr_fine_risk_brl: number;
+  roi_ratio: number;
+  volume_covered_kt: number;
+  volume_unlocked_kt: number;
+  mathematical_basis: string;
+  insight: string;
+}
+
 export interface RouteComparison {
   origin: string;
   tariff: TariffResult;

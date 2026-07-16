@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AnalyzeRequest, AnalyzeResponse, HistoryItem, CompareRequest, CompareResponse, OptimizationResult } from '../types';
+import type { AnalyzeRequest, AnalyzeResponse, HistoryItem, CompareRequest, CompareResponse, OptimizationResult, AuditPathResult } from '../types';
 
 const client = axios.create({
   baseURL: 'http://localhost:8000',
@@ -32,5 +32,14 @@ export async function compareRoutes(payload: CompareRequest): Promise<CompareRes
 
 export async function optimizeHoneycomb(budget: number, commodity: string): Promise<OptimizationResult> {
   const { data } = await client.post<OptimizationResult>('/api/optimize', { budget_brl: budget, commodity });
+  return data;
+}
+
+export async function calculateAuditPath(targetCoverage: number, startRegion: string, commodity: string): Promise<AuditPathResult> {
+  const { data } = await client.post<AuditPathResult>('/api/audit-path', {
+    target_coverage_pct: targetCoverage,
+    start_region: startRegion,
+    commodity,
+  });
   return data;
 }

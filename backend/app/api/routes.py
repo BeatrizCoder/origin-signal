@@ -249,6 +249,16 @@ async def optimize_routes(payload: dict) -> dict:
     return optimize_honeycomb(budget, commodity)
 
 
+@router.post("/audit-path")
+async def audit_path(payload: dict) -> dict:
+    from app.agents.gap_agent import calculate_minimum_coverage_path
+    return calculate_minimum_coverage_path(
+        target_coverage_pct=payload.get('target_coverage_pct', 80),
+        start_region=payload.get('start_region', 'Cerrado Mineiro'),
+        commodity=payload.get('commodity', 'coffee')
+    )
+
+
 @router.get("/history")
 async def get_history(limit: int = 20) -> list:
     return await get_analyses(limit)
