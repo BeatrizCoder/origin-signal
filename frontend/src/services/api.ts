@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AnalyzeRequest, AnalyzeResponse, HistoryItem, CompareRequest, CompareResponse, OptimizationResult, AuditPathResult } from '../types';
+import type { AnalyzeRequest, AnalyzeResponse, HistoryItem, CompareRequest, CompareResponse, OptimizationResult, AuditPathResult, GlobalRiskResponse } from '../types';
 
 const client = axios.create({
   baseURL: 'http://localhost:8000',
@@ -41,5 +41,10 @@ export async function calculateAuditPath(targetCoverage: number, startRegion: st
     start_region: startRegion,
     commodity,
   });
+  return data;
+}
+
+export async function getGlobalRisk(commodity: string): Promise<GlobalRiskResponse> {
+  const { data } = await client.get<GlobalRiskResponse>(`/api/global-risk/${commodity}`);
   return data;
 }

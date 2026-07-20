@@ -111,6 +111,43 @@ export interface ExecutiveResult {
   overall_verdict: 'Go' | 'Caution' | 'Hold';
 }
 
+export interface AgentApiCall {
+  endpoint: string;
+  params?: Record<string, number | string>;
+  status: number;
+  response_time_ms: number;
+}
+
+export interface RagChunk {
+  text: string;
+  source: string;
+  article: string;
+  score: number;
+}
+
+export interface AgentObservability {
+  name: string;
+  model: string;
+  status: 'completed' | 'failed';
+  duration_ms: number;
+  data_sources: string[];
+  api_calls?: AgentApiCall[];
+  rag_chunks?: RagChunk[];
+  tokens_used?: { input: number; output: number };
+  confidence: number;
+  output_summary: string;
+}
+
+export interface ObservabilityData {
+  pipeline_start: string;
+  pipeline_end: string;
+  total_duration_ms: number;
+  total_tokens: { input: number; output: number };
+  agents: AgentObservability[];
+  rag_evidence: RagChunk[];
+  data_freshness: Record<string, string>;
+}
+
 export interface AnalyzeResponse {
   regulatory: RegulationResult;
   climate: ClimateResult;
@@ -121,6 +158,7 @@ export interface AnalyzeResponse {
   honeycomb?: HoneycombResult;
   propagation?: PropagationData;
   executive: ExecutiveResult;
+  observability?: ObservabilityData;
   overall_risk_score: number;
   export_readiness: number;
   supply_reliability?: number;
@@ -284,6 +322,24 @@ export interface CompareResponse {
   destination: string;
   cif_value_usd: number;
   recommendation: string;
+}
+
+export interface CountryRiskScores {
+  regulatory: number;
+  climate: number;
+  market: number;
+  logistics: number;
+  overall: number;
+  tariff_alert?: boolean;
+  tariff_note?: string;
+}
+
+export interface GlobalRiskResponse {
+  commodity: string;
+  export_destinations: Record<string, CountryRiskScores>;
+  import_origins: Record<string, CountryRiskScores>;
+  alert_countries: string[];
+  last_updated: string;
 }
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';

@@ -19,6 +19,9 @@ export interface LandingParams {
 interface Props {
   onAnalyze: (params: LandingParams) => void;
   onCompare: () => void;
+  initialOrigin?: string;
+  initialDestination?: string;
+  initialTradeDirection?: TradeDirection;
 }
 
 const AMBER      = '#D4900A';
@@ -114,17 +117,19 @@ const selectStyle: React.CSSProperties = {
   boxSizing: 'border-box', cursor: 'pointer',
 };
 
-export default function LandingScreen({ onAnalyze, onCompare }: Props) {
+export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, initialDestination, initialTradeDirection }: Props) {
   const [commodity,       setCommodity]       = useState('coffee');
-  const [destination,     setDestination]     = useState('European Union');
-  const [importOrigin,    setImportOrigin]    = useState('United States');
+  const [destination,     setDestination]     = useState(initialTradeDirection !== 'import' && initialDestination ? initialDestination : 'European Union');
+  const [importOrigin,    setImportOrigin]    = useState(initialTradeDirection === 'import' && initialOrigin ? initialOrigin : 'United States');
   const [focus,           setFocus]           = useState<Focus>('composite');
   const [horizon,         setHorizon]         = useState<Horizon>('90');
   const [query,           setQuery]           = useState('');
-  const [tradeDirection,  setTradeDirection]  = useState<TradeDirection>('export');
+  const [tradeDirection,  setTradeDirection]  = useState<TradeDirection>(initialTradeDirection ?? 'export');
   const { t } = useLanguage();
 
   const isImport = tradeDirection === 'import';
+  const destinationOptions   = DESTINATIONS.includes(destination) ? DESTINATIONS : [destination, ...DESTINATIONS];
+  const importOriginOptions  = IMPORT_ORIGINS.includes(importOrigin) ? IMPORT_ORIGINS : [importOrigin, ...IMPORT_ORIGINS];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -193,7 +198,7 @@ export default function LandingScreen({ onAnalyze, onCompare }: Props) {
                   fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
                 }}
               >
-                {IMPORT_ORIGINS.map(o => (
+                {importOriginOptions.map(o => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
@@ -228,7 +233,7 @@ export default function LandingScreen({ onAnalyze, onCompare }: Props) {
                   fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
                 }}
               >
-                {DESTINATIONS.map(d => (
+                {destinationOptions.map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>

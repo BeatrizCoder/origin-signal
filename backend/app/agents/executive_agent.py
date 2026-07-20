@@ -186,7 +186,7 @@ class ExecutiveAgent:
         is_import = trade_direction == "import"
 
         if self._client is None:
-            return (_MOCK_IMPORT if is_import else _MOCK_EXPORT).copy()
+            return {**(_MOCK_IMPORT if is_import else _MOCK_EXPORT), "token_usage": {"input": 0, "output": 0}}
 
         system_prompt = _build_import_prompt(origin) if is_import else _SYSTEM_PROMPT_EXPORT
 
@@ -213,4 +213,10 @@ class ExecutiveAgent:
         raw = response.content[0].text.strip()
         raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
         raw = re.sub(r"\s*```$", "", raw)
-        return json.loads(raw)
+        return {
+            **json.loads(raw),
+            "token_usage": {
+                "input": response.usage.input_tokens,
+                "output": response.usage.output_tokens,
+            },
+        }

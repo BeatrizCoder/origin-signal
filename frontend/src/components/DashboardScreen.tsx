@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import type { AnalyzeResponse, TariffCalculation } from '../types';
+import type { AnalyzeResponse, TariffCalculation, AgentObservability } from '../types';
 import { getRiskLevel } from '../types';
 import HexMap from './HexMap';
+import GlobalHeatMap from './GlobalHeatMap';
 import { analyzeRoute } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
 
-type Tab = 'analysis' | 'map';
+type Tab = 'analysis' | 'map' | 'global' | 'ai';
 
 const AMBER       = '#D4900A';
 const AMBER_LIGHT = '#F5B731';
@@ -47,6 +48,22 @@ const AGENTS = [
   'Executive Intelligence',
 ];
 
+const AGENT_ICONS: Record<string, string> = {
+  'Climate Engine':          '☁',
+  'Regulatory Engine':       '📄',
+  'Market Engine':           '📈',
+  'Logistics Engine':        '🚢',
+  'Gap Analysis Engine':     '⚠',
+  'Executive Intelligence':  '🧠',
+};
+
+const FRESHNESS_LABELS: Record<string, string> = {
+  climate:    'Climate',
+  regulatory: 'Regulatory',
+  market:     'Market',
+  logistics:  'Logistics',
+};
+
 const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 
 const fmtBRL = (v: number) =>
@@ -63,6 +80,12 @@ function dimColor(v: number): string {
   if (v >= 70) return '#F87171';
   if (v >= 40) return '#FBBF24';
   return '#34D399';
+}
+
+function confidenceColor(v: number): string {
+  if (v >= 75) return '#34D399';
+  if (v >= 50) return '#FBBF24';
+  return '#F87171';
 }
 
 const AMBER_BTN_STYLE: React.CSSProperties = {
@@ -125,6 +148,63 @@ function MetricCard({ label, value, unit, color, sub }: {
   );
 }
 
+function AgentCard({ agent, t }: { agent: AgentObservability; t: (k: string) => string }) {
+  const failed = agent.status === 'failed';
+  return (
+    <div style={{
+      background: SURFACE, border: `1px solid ${BORDER}`,
+      borderRadius: 8, padding: '16px 18px',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>{AGENT_ICONS[agent.name] ?? '⬡'}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+            {agent.name}
+          </span>
+        </div>
+        <span style={{
+          fontSize: 9, fontWeight: 700, letterSpacing: 0.8,
+          fontFamily: 'ui-monospace, Consolas, monospace',
+          color: failed ? '#F87171' : '#34D399',
+          background: failed ? '#2D0D0D' : '#0D3321',
+          padding: '2px 7px', borderRadius: 3,
+        }}>{failed ? 'FAILED' : 'COMPLETED'}</span>
+      </div>
+
+      <div style={{ fontSize: 11, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+        {agent.model} · {agent.duration_ms}ms
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{ fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>{t('confidence')}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: confidenceColor(agent.confidence), fontFamily: 'ui-monospace, Consolas, monospace' }}>
+            {agent.confidence}%
+          </span>
+        </div>
+        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${agent.confidence}%`, background: confidenceColor(agent.confidence), borderRadius: 2 }} />
+        </div>
+      </div>
+
+      <div style={{ fontSize: 10, color: TEXT_MUTED, lineHeight: 1.5 }}>
+        {agent.data_sources.join(' · ')}
+      </div>
+
+      {agent.tokens_used && (
+        <div style={{ fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+          {t('tokens_input')}: {agent.tokens_used.input.toLocaleString()} · {t('tokens_output')}: {agent.tokens_used.output.toLocaleString()}
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.5, borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+        {agent.output_summary}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   result: AnalyzeResponse;
   commodity: string;
@@ -137,9 +217,10 @@ interface Props {
   onCompare: () => void;
   onOptimize: () => void;
   onAuditPath: () => void;
+  onAnalyzeRoute?: (origin: string, destination: string, tradeDirection: 'export' | 'import') => void;
 }
 
-export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory, onCompare, onOptimize, onAuditPath }: Props) {
+export default function DashboardScreen({ result, commodity, horizon, origin, destination, tradeDirection, onNewAnalysis, onHistory, onCompare, onOptimize, onAuditPath, onAnalyzeRoute }: Props) {
   const [activeTab,   setActiveTab]   = useState<Tab>('analysis');
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const { t } = useLanguage();
@@ -193,6 +274,8 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const verdict    = exec?.overall_verdict;
   const verdictColor = verdict === 'Go' ? '#34D399' : verdict === 'Hold' ? '#F87171' : '#FBBF24';
 
+  const obs = result.observability;
+
   const dims = [
     { key: 'regulatory' as const, value: clamp(result.regulatory?.risk_score ?? result.risk_score) },
     { key: 'market'     as const, value: clamp(result.market?.market_risk_score ?? 50) },
@@ -209,6 +292,17 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
   const riskBadge = riskLevel === 'HIGH' ? t('high') : riskLevel === 'MEDIUM' ? t('medium') : t('low');
   const verdictLabel = verdict === 'Go' ? t('go') : verdict === 'Hold' ? t('hold') : t('caution');
+
+  const decisionTraceInputs = [
+    { label: t('regulatory'), value: clamp(result.regulatory?.risk_score ?? 0) },
+    { label: t('climate'),    value: clamp(result.climate?.climate_risk_score ?? 0) },
+    { label: t('market'),     value: clamp(result.market?.market_risk_score ?? 0) },
+    { label: t('logistics'),  value: clamp(result.logistics?.logistics_risk_score ?? 0) },
+    { label: 'Gap',           value: clamp(result.gap?.gap_risk_score ?? 0) },
+  ];
+  const decisionTrace =
+    decisionTraceInputs.map(d => `${d.label} ${d.value}`).join(' + ') +
+    ` → weighted average → ${t('trade_risk_score')} ${score} → Executive synthesis → ${verdict ? verdictLabel.toUpperCase() : '—'} verdict`;
 
   const mapTitle = isImport
     ? 'SUPPLY ORIGIN RISK MAP · IMPORT SOURCES'
@@ -460,7 +554,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
           display: 'flex', alignItems: 'center',
           flexShrink: 0, background: BG,
         }}>
-          {(['analysis', 'map'] as Tab[]).map(tab => (
+          {(['analysis', 'map', 'global', 'ai'] as Tab[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -473,7 +567,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                 cursor: 'pointer', marginBottom: -1, transition: 'color 0.15s',
               }}
             >
-              {tab === 'analysis' ? t('analysis_tab') : t('map_tab')}
+              {tab === 'analysis' ? t('analysis_tab') : tab === 'map' ? t('map_tab') : tab === 'global' ? t('global_tab') : t('ai_tab')}
             </button>
           ))}
 
@@ -508,11 +602,13 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
         {/* Scrollable content */}
         <main style={{
           flex: 1,
-          overflowY: activeTab === 'map' ? 'hidden' : 'auto',
-          padding:   activeTab === 'map' ? 0 : '24px 28px 60px',
+          overflowY: (activeTab === 'map' || activeTab === 'global') ? 'hidden' : 'auto',
+          padding:   (activeTab === 'map' || activeTab === 'global') ? 0 : '24px 28px 60px',
         }}>
 
           {activeTab === 'map' && <HexMap onAnalyzeRegion={handleAnalyzeRegion} commodity={commodity} tradeDirection={tradeDirection} propagationData={result.propagation} />}
+
+          {activeTab === 'global' && <GlobalHeatMap commodity={commodity} tradeDirection={tradeDirection} onAnalyzeRoute={onAnalyzeRoute} />}
 
           {activeTab === 'analysis' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
@@ -979,6 +1075,173 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                 )}
 
               </div>
+            </div>
+          )}
+
+          {activeTab === 'ai' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
+              {!obs && (
+                <div style={{ color: TEXT_MUTED, fontSize: 13 }}>
+                  {t('no_observability_data')}
+                </div>
+              )}
+
+              {obs && (() => {
+                const regAgent = obs.agents.find(a => a.name === 'Regulatory Engine');
+                const ragChunks = regAgent?.rag_chunks ?? obs.rag_evidence;
+                const allCompleted = obs.agents.every(a => a.status === 'completed');
+                const completedPct = Math.round(
+                  (obs.agents.filter(a => a.status === 'completed').length / obs.agents.length) * 100
+                );
+                const totalTokens = obs.total_tokens.input + obs.total_tokens.output;
+
+                return (
+                  <>
+                    {/* SEÇÃO 1 — Pipeline Overview */}
+                    <div style={{
+                      background: SURFACE, border: `1px solid ${BORDER}`,
+                      borderRadius: 8, padding: '20px 24px',
+                      display: 'flex', flexDirection: 'column', gap: 16,
+                    }}>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
+                        textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
+                      }}>{t('pipeline_overview')}</div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                        <div>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 4 }}>
+                            {t('total_duration')}
+                          </div>
+                          <div style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 26, fontWeight: 700, color: AMBER_LIGHT }}>
+                            {(obs.total_duration_ms / 1000).toFixed(1)}s
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 4 }}>
+                            {t('total_tokens')}
+                          </div>
+                          <div style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 26, fontWeight: 700, color: TEXT }}>
+                            {totalTokens.toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 4 }}>
+                            PIPELINE STATUS
+                          </div>
+                          <div style={{
+                            fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 16, fontWeight: 700,
+                            color: allCompleted ? '#34D399' : '#FBBF24',
+                          }}>
+                            {allCompleted ? 'COMPLETED' : 'PARTIAL'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', width: `${completedPct}%`,
+                          background: allCompleted ? '#34D399' : '#FBBF24', borderRadius: 3,
+                        }} />
+                      </div>
+                    </div>
+
+                    {/* SEÇÃO 2 — Agent Cards */}
+                    <div>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
+                        textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 12,
+                      }}>{t('agent_cards')}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                        {obs.agents.map(agent => (
+                          <AgentCard key={agent.name} agent={agent} t={t} />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* SEÇÃO 3 — RAG Evidence */}
+                    {ragChunks && ragChunks.length > 0 && (
+                      <div style={{
+                        background: SURFACE, border: `1px solid ${BORDER}`,
+                        borderRadius: 8, padding: '20px 24px',
+                        display: 'flex', flexDirection: 'column', gap: 14,
+                      }}>
+                        <div style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
+                          textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
+                        }}>
+                          {t('rag_evidence')} — {ragChunks.length} {t('chunks_retrieved')}
+                        </div>
+                        {ragChunks.map((chunk, i) => (
+                          <div key={i} style={{
+                            display: 'flex', flexDirection: 'column', gap: 6,
+                            borderTop: i > 0 ? `1px solid ${BORDER}` : 'none',
+                            paddingTop: i > 0 ? 12 : 0,
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, color: AMBER,
+                                fontFamily: 'ui-monospace, Consolas, monospace',
+                              }}>{chunk.article || 'EUDR 2023/1115'}</span>
+                              <span style={{ fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                                {chunk.source}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.6 }}>{chunk.text}…</div>
+                            <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${chunk.score}%`, background: AMBER, borderRadius: 2 }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* SEÇÃO 4 — Data Freshness */}
+                    <div>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
+                        textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 12,
+                      }}>{t('data_freshness')}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {Object.entries(obs.data_freshness).map(([key, value]) => (
+                          <div key={key} style={{
+                            background: SURFACE, border: `1px solid ${BORDER}`,
+                            borderRadius: 8, padding: '12px 16px',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                          }}>
+                            <span style={{
+                              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                              background: key === 'climate' ? '#34D399' : '#FBBF24',
+                            }} />
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                                {FRESHNESS_LABELS[key] ?? key}
+                              </div>
+                              <div style={{ fontSize: 10, color: TEXT_MUTED }}>{value}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* SEÇÃO 5 — Decision Trace */}
+                    <div style={{
+                      background: `${AMBER}0D`, border: `1px solid ${AMBER}33`,
+                      borderRadius: 6, padding: '16px 18px',
+                      display: 'flex', flexDirection: 'column', gap: 8,
+                    }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
+                        fontFamily: 'ui-monospace, Consolas, monospace',
+                        color: AMBER_LIGHT, textTransform: 'uppercase' as const,
+                      }}>{t('decision_trace')}</span>
+                      <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.8, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                        {decisionTrace}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
         </main>

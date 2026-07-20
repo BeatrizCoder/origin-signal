@@ -21,6 +21,12 @@ export default function App() {
   const [tradeDirection, setTradeDirection] = useState<'export' | 'import'>('export');
   const [result,         setResult]         = useState<AnalyzeResponse | null>(null);
   const [error,          setError]          = useState<string | null>(null);
+  const [prefill,        setPrefill]        = useState<{ origin: string; destination: string; tradeDirection: 'export' | 'import' } | null>(null);
+
+  function handleAnalyzeRoute(o: string, d: string, td: 'export' | 'import') {
+    setPrefill({ origin: o, destination: d, tradeDirection: td });
+    setScreen('landing');
+  }
 
   async function handleAnalyze({ commodity: c, focus, horizon: h, query, origin: orig, destination: dest, trade_direction: td }: LandingParams) {
     setCommodity(c);
@@ -116,9 +122,18 @@ export default function App() {
         onCompare={() => setScreen('comparator')}
         onOptimize={() => setScreen('optimization')}
         onAuditPath={() => setScreen('audit-path')}
+        onAnalyzeRoute={handleAnalyzeRoute}
       />
     );
   }
 
-  return <LandingScreen onAnalyze={handleAnalyze} onCompare={() => setScreen('comparator')} />;
+  return (
+    <LandingScreen
+      onAnalyze={handleAnalyze}
+      onCompare={() => setScreen('comparator')}
+      initialOrigin={prefill?.origin}
+      initialDestination={prefill?.destination}
+      initialTradeDirection={prefill?.tradeDirection}
+    />
+  );
 }

@@ -80,9 +80,18 @@ class RegulatoryAgent:
             else query
         )
         chunks = self._store.search(search_query, n_results=5)
+        rag_evidence = [
+            {
+                'text': c['text'][:150],
+                'source': c['source'],
+                'article': c['article_number'],
+                'score': round(max(0.0, min(1.0, 1 - c['distance'])) * 100, 1),
+            }
+            for c in chunks[:3]
+        ]
 
         if self._client is None:
-            return self._mock_response(query, commodity, origin, destination)
+            return self._mock_response(query, commodity, origin, destination, rag_evidence)
 
         context_blocks = "\n\n---\n\n".join(
             f"[{c['chunk_type'].upper()} {c['article_number']}] (source: {c['source']})\n{c['text']}"
@@ -180,9 +189,14 @@ class RegulatoryAgent:
             "commodity": commodity,
             "origin": origin,
             "destination": destination,
+            "rag_evidence": rag_evidence,
+            "token_usage": {
+                "input": response.usage.input_tokens,
+                "output": response.usage.output_tokens,
+            },
         }
 
-    def _mock_response(self, query: str, commodity: str, origin: str, destination: str) -> dict:
+    def _mock_response(self, query: str, commodity: str, origin: str, destination: str, rag_evidence: list[dict] | None = None) -> dict:
         return {
             "risk_score": 42,
             "risk_level": "Medium",
@@ -204,4 +218,6 @@ class RegulatoryAgent:
             "commodity": commodity,
             "origin": origin,
             "destination": destination,
+            "rag_evidence": rag_evidence or [],
+            "token_usage": {"input": 0, "output": 0},
         }
