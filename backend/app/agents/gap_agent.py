@@ -399,32 +399,91 @@ def calculate_minimum_coverage_path(
     }
 
 
-def calculate_hes(commodity: str = 'coffee') -> dict:
-    total_volume = sum(REGION_VOLUMES.values())
+COFFEE_VOLUMES = REGION_VOLUMES
+COFFEE_RISK_SCORES = REGION_RISK_SCORES
+
+SOYBEAN_VOLUMES = {
+    'Mato Grosso': 35.8, 'Mato Grosso do Sul': 12.4, 'Paraná': 22.1,
+    'Rio Grande do Sul': 18.6, 'Goiás': 14.2, 'Bahia Oeste': 8.9,
+    'Maranhão': 5.4, 'Tocantins': 4.8, 'Minas Gerais': 6.2,
+}
+
+SOYBEAN_RISK_SCORES = {
+    'Mato Grosso': 72, 'Mato Grosso do Sul': 58, 'Paraná': 35,
+    'Rio Grande do Sul': 28, 'Goiás': 62, 'Bahia Oeste': 85,
+    'Maranhão': 88, 'Tocantins': 75, 'Minas Gerais': 48,
+}
+
+FRUITS_VOLUMES = {
+    'São Paulo': 18.4, 'Vale São Francisco': 22.6, 'Santa Catarina': 8.2,
+    'Espírito Santo': 7.5, 'Bahia': 12.8, 'Rio Grande do Norte': 6.4,
+    'Pernambuco': 9.2, 'Ceará': 5.8,
+}
+
+FRUITS_RISK_SCORES = {
+    'São Paulo': 42, 'Vale São Francisco': 55, 'Santa Catarina': 25,
+    'Espírito Santo': 48, 'Bahia': 65, 'Rio Grande do Norte': 50,
+    'Pernambuco': 58, 'Ceará': 52,
+}
+
+# Import mode — países como células
+IMPORT_ORIGIN_VOLUMES = {
+    'Argentina': 45.0, 'Colombia': 28.5, 'Peru': 12.4,
+    'Chile': 18.6, 'United States': 22.8, 'China': 35.2,
+    'European Union': 42.1, 'Uruguay': 8.4, 'Paraguay': 15.6,
+}
+
+IMPORT_ORIGIN_RISK_SCORES = {
+    'Argentina': 25, 'Colombia': 45, 'Peru': 48,
+    'Chile': 30, 'United States': 62, 'China': 75,
+    'European Union': 35, 'Uruguay': 20, 'Paraguay': 22,
+}
+
+
+def calculate_hes(commodity: str = 'coffee', trade_direction: str = 'export') -> dict:
+    # Seleciona dataset baseado em commodity e direção
+    if trade_direction == 'import':
+        volumes = IMPORT_ORIGIN_VOLUMES
+        risk_scores = IMPORT_ORIGIN_RISK_SCORES
+        context_label = 'Import Origins'
+    elif commodity == 'soybeans':
+        volumes = SOYBEAN_VOLUMES
+        risk_scores = SOYBEAN_RISK_SCORES
+        context_label = 'Soybean Regions'
+    elif commodity == 'fruits':
+        volumes = FRUITS_VOLUMES
+        risk_scores = FRUITS_RISK_SCORES
+        context_label = 'Fruit Regions'
+    else:  # coffee (default)
+        volumes = COFFEE_VOLUMES
+        risk_scores = COFFEE_RISK_SCORES
+        context_label = 'Coffee Regions'
+
+    total_volume = sum(volumes.values())
 
     low_risk_volume = sum(
-        vol for region, vol in REGION_VOLUMES.items()
-        if REGION_RISK_SCORES.get(region, 50) < 40
+        vol for region, vol in volumes.items()
+        if risk_scores.get(region, 50) < 40
     )
     mid_risk_volume = sum(
-        vol for region, vol in REGION_VOLUMES.items()
-        if 40 <= REGION_RISK_SCORES.get(region, 50) < 70
+        vol for region, vol in volumes.items()
+        if 40 <= risk_scores.get(region, 50) < 70
     )
     high_risk_volume = sum(
-        vol for region, vol in REGION_VOLUMES.items()
-        if REGION_RISK_SCORES.get(region, 50) >= 70
+        vol for region, vol in volumes.items()
+        if risk_scores.get(region, 50) >= 70
     )
 
     hes = round((low_risk_volume / total_volume) * 100, 1)
 
     # Células por nível de risco
-    low_cells = [r for r, s in REGION_RISK_SCORES.items() if s < 40]
-    mid_cells = [r for r, s in REGION_RISK_SCORES.items() if 40 <= s < 70]
-    high_cells = [r for r, s in REGION_RISK_SCORES.items() if s >= 70]
+    low_cells = [r for r, s in risk_scores.items() if s < 40]
+    mid_cells = [r for r, s in risk_scores.items() if 40 <= s < 70]
+    high_cells = [r for r, s in risk_scores.items() if s >= 70]
 
     # Células críticas que mais impactam o HES
     critical_cells = sorted(
-        [(r, REGION_RISK_SCORES[r], REGION_VOLUMES[r])
+        [(r, risk_scores[r], volumes[r])
          for r in high_cells],
         key=lambda x: x[2], reverse=True
     )[:3]
@@ -437,6 +496,9 @@ def calculate_hes(commodity: str = 'coffee') -> dict:
     return {
         'hes_score': hes,
         'hes_label': 'Critical' if hes < 30 else 'Low' if hes < 50 else 'Moderate' if hes < 70 else 'Good',
+        'context_label': context_label,
+        'commodity': commodity,
+        'trade_direction': trade_direction,
         'total_volume_kt': round(total_volume, 1),
         'low_risk_volume_kt': round(low_risk_volume, 1),
         'mid_risk_volume_kt': round(mid_risk_volume, 1),
@@ -444,15 +506,17 @@ def calculate_hes(commodity: str = 'coffee') -> dict:
         'low_risk_cells': len(low_cells),
         'mid_risk_cells': len(mid_cells),
         'high_risk_cells': len(high_cells),
-        'total_cells': len(REGION_VOLUMES),
+        'total_cells': len(volumes),
         'critical_cells': [
             {'region': r, 'risk_score': s, 'volume_kt': v}
             for r, s, v in critical_cells
         ],
         'potential_hes': potential_hes,
         'potential_gain': round(potential_hes - hes, 1),
-        'insight': f"Only {hes}% of exportable volume is in low-risk cells. "
-                   f"Regularizing {critical_cells[0][0] if critical_cells else 'critical regions'} "
+        'insight': f"Only {hes}% of {'importable' if trade_direction == 'import' else 'exportable'} volume "
+                   f"is in low-risk {'origins' if trade_direction == 'import' else 'cells'}. "
+                   f"{'Diversifying away from' if trade_direction == 'import' else 'Regularizing'} "
+                   f"{critical_cells[0][0] if critical_cells else 'critical regions'} "
                    f"could increase HES to {potential_hes}% (+{round(potential_hes-hes,1)}pp)."
     }
 

@@ -138,7 +138,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
             gap["gap_risk_score"]            * 0.10
         )))
 
-    honeycomb = calculate_hes(body.commodity)
+    honeycomb = calculate_hes(body.commodity, body.trade_direction)
 
     base_scores = {
         region: {
@@ -354,8 +354,8 @@ async def compare_routes(body: CompareRequest) -> dict:
 
 
 @router.get("/honeycomb/{commodity}")
-async def get_honeycomb_score(commodity: str) -> dict:
-    return calculate_hes(commodity)
+async def get_honeycomb_score(commodity: str, trade_direction: str = 'export') -> dict:
+    return calculate_hes(commodity, trade_direction)
 
 
 @router.get("/global-risk/{commodity}")

@@ -612,7 +612,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                           alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>?</span>
                       </div>
-                      <h2 style={{ margin: '0 0 24px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Honeycomb Efficiency Score</h2>
+                      <h2 style={{ margin: '0 0 4px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Honeycomb Efficiency Score</h2>
+                      <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 20, fontFamily: FONT }}>
+                        {hc.context_label} · {hc.trade_direction === 'import' ? 'Worldwide' : 'Brazil'}
+                      </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 44, alignItems: 'center' }}>
                         {/* Left — main score */}
@@ -622,7 +625,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                               <div style={{ fontSize: 40, fontWeight: 800, color: COLORS.textPrimary, fontFamily: FONT }}>{hc.hes_score}%</div>
                               <span style={{ fontSize: 11, fontWeight: 700, color: hesCol, fontFamily: FONT }}>{hesLabelText}</span>
                             </div>
-                            <div style={{ fontSize: 10.5, color: COLORS.textSecondary, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 4, fontFamily: FONT }}>{t('volume_safe_cells')}</div>
+                            <div style={{ fontSize: 10.5, color: COLORS.textSecondary, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginTop: 4, fontFamily: FONT }}>{hc.trade_direction === 'import' ? t('volume_safe_origins') : t('volume_safe_cells')}</div>
                           </div>
                           <i className="fas fa-arrow-right" style={{ color: COLORS.textSecondary, fontSize: 18 }} />
                           <div>
@@ -656,7 +659,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
                       {/* Critical cells */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 26 }}>
-                        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 1, color: COLORS.textSecondary, textTransform: 'uppercase' as const, fontFamily: FONT }}>{t('critical_cells')}</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 1, color: COLORS.textSecondary, textTransform: 'uppercase' as const, fontFamily: FONT }}>{hc.trade_direction === 'import' ? t('import_origins_label') : t('critical_cells')}</div>
                         {hc.critical_cells.map((c, i) => (
                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: FONT }}>
                             <span style={{ color: COLORS.textPrimary }}>{c.region}</span>

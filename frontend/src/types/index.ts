@@ -205,6 +205,9 @@ export interface HoneycombCriticalCell {
 export interface HoneycombResult {
   hes_score: number;
   hes_label: 'Critical' | 'Low' | 'Moderate' | 'Good';
+  context_label: string;
+  commodity: string;
+  trade_direction: string;
   total_volume_kt: number;
   low_risk_volume_kt: number;
   mid_risk_volume_kt: number;
