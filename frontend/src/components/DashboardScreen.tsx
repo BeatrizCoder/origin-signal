@@ -36,21 +36,21 @@ const HES_COLORS: Record<string, string> = {
 };
 
 const PIPELINE_STEPS = [
-  { id: 'climate',    icon: '🌦', label: 'Climate Engine' },
-  { id: 'regulatory', icon: '⚖',  label: 'Regulatory Engine' },
-  { id: 'market',     icon: '📈', label: 'Market Engine' },
-  { id: 'logistics',  icon: '🚢', label: 'Logistics Engine' },
-  { id: 'gap',        icon: '🐝', label: 'Gap Analysis Engine' },
-  { id: 'executive',  icon: '🧠', label: 'Executive Intelligence' },
+  { id: 'climate',    icon: '🌦', label: 'Climate Intelligence' },
+  { id: 'regulatory', icon: '⚖',  label: 'Regulatory Intelligence' },
+  { id: 'market',     icon: '📈', label: 'Market Intelligence' },
+  { id: 'logistics',  icon: '🚢', label: 'Logistics Intelligence' },
+  { id: 'gap',        icon: '🐝', label: 'Due Diligence Engine' },
+  { id: 'executive',  icon: '🧠', label: 'Executive AI Synthesis' },
 ];
 
 const AGENT_ICONS: Record<string, string> = {
-  'Climate Engine':          '🌦',
-  'Regulatory Engine':       '⚖',
-  'Market Engine':           '📈',
-  'Logistics Engine':        '🚢',
-  'Gap Analysis Engine':     '🐝',
-  'Executive Intelligence':  '🧠',
+  'Climate Intelligence':    '🌦',
+  'Regulatory Intelligence': '⚖',
+  'Market Intelligence':     '📈',
+  'Logistics Intelligence':  '🚢',
+  'Due Diligence Engine':    '🐝',
+  'Executive AI Synthesis':  '🧠',
 };
 
 const FRESHNESS_LABELS: Record<string, string> = {
@@ -422,7 +422,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
             </div>
           </div>
 
-          {/* Agent Pipeline */}
+          {/* Intelligence Hive */}
           <div>
             <Eyebrow>{t('agent_pipeline')}</Eyebrow>
             <div style={{ marginTop: 10 }}>
@@ -893,7 +893,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               )}
 
               {obs && (() => {
-                const regAgent = obs.agents.find((a: AgentObservability) => a.name === 'Regulatory Engine');
+                const regAgent = obs.agents.find((a: AgentObservability) => a.name === 'Regulatory Intelligence');
                 const ragChunks = regAgent?.rag_chunks ?? obs.rag_evidence;
                 const allCompleted = obs.agents.every(a => a.status === 'completed');
                 const completedPct = Math.round(
@@ -945,7 +945,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                                     {AGENT_ICONS[agent.name] ?? '⬢'} {agent.name}
                                   </span>
                                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, color: failed ? COLORS.danger : COLORS.petroleo, fontFamily: FONT, textTransform: 'uppercase' as const }}>
-                                    {failed ? 'Failed' : 'Completed'}
+                                    {failed ? 'Failed' : 'Verified'}
                                   </span>
                                 </div>
                                 <div style={{ fontSize: 11.5, color: COLORS.textSecondary, fontFamily: FONT }}>{agent.model} · {agent.duration_ms}ms</div>

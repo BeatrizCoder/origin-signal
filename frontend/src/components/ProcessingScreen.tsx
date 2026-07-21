@@ -6,10 +6,10 @@ import PipelineStrip from './ui/PipelineStrip';
 import { COLORS, FONT } from '../theme';
 
 const ENGINE_STEPS = [
-  { id: 'climate',    icon: '🌦', label: 'Climate Engine' },
-  { id: 'regulatory', icon: '⚖',  label: 'Regulatory Engine' },
-  { id: 'market',     icon: '📈', label: 'Market Engine' },
-  { id: 'logistics',  icon: '🚢', label: 'Logistics Engine' },
+  { id: 'climate',    icon: '🌦', label: 'Climate Intelligence' },
+  { id: 'regulatory', icon: '⚖',  label: 'Regulatory Intelligence' },
+  { id: 'market',     icon: '📈', label: 'Market Intelligence' },
+  { id: 'logistics',  icon: '🚢', label: 'Logistics Intelligence' },
   { id: 'honeycomb',  icon: '🐝', label: 'Honeycomb Intelligence' },
   { id: 'executive',  icon: '🧠', label: 'AI Decision Engine' },
 ];

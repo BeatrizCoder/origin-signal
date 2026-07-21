@@ -174,7 +174,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
         },
         'agents': [
             {
-                'name': 'Climate Engine',
+                'name': 'Climate Intelligence',
                 'model': 'Open-Meteo API',
                 'status': 'completed',
                 'duration_ms': clim_ms,
@@ -191,7 +191,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
                 'output_summary': f"Climate risk score {clim.get('climate_risk_score', 0)} calculated from 16-day forecast",
             },
             {
-                'name': 'Regulatory Engine',
+                'name': 'Regulatory Intelligence',
                 'model': 'claude-haiku-4-5',
                 'status': 'completed',
                 'duration_ms': reg_ms,
@@ -202,7 +202,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
                 'output_summary': f"Regulatory risk {reg.get('risk_score', 0)} ({reg.get('risk_level', 'Medium')}) from {len(rag_evidence)} RAG chunks",
             },
             {
-                'name': 'Market Engine',
+                'name': 'Market Intelligence',
                 'model': 'USDA FAS PSD API',
                 'status': 'completed',
                 'duration_ms': mkt_ms,
@@ -218,7 +218,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
                 'output_summary': f"Market risk {mkt.get('market_risk_score', 0)} based on supply/demand data",
             },
             {
-                'name': 'Logistics Engine',
+                'name': 'Logistics Intelligence',
                 'model': 'Internal routing data',
                 'status': 'completed',
                 'duration_ms': logi_ms,
@@ -227,7 +227,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
                 'output_summary': f"Route {logi.get('origin_port', '—')} → {logi.get('destination_port', '—')}, {logi.get('estimated_transit_days', 0)} days transit",
             },
             {
-                'name': 'Gap Analysis Engine',
+                'name': 'Due Diligence Engine',
                 'model': 'Rule-based + Honeycomb algorithms',
                 'status': 'completed',
                 'duration_ms': gap_ms,
@@ -236,7 +236,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
                 'output_summary': f"Gap risk score {gap.get('gap_risk_score', 0)} — GPS coverage gap identified",
             },
             {
-                'name': 'Executive Intelligence',
+                'name': 'Executive AI Synthesis',
                 'model': 'claude-haiku-4-5-20251001' if is_import else 'claude-sonnet-4-6',
                 'status': 'completed',
                 'duration_ms': exec_ms,
