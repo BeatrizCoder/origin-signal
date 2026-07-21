@@ -3,22 +3,17 @@ import type { CompareResponse, RouteComparison, TariffCalculation } from '../typ
 import { compareRoutes } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
-
-const AMBER       = '#D4900A';
-const AMBER_LIGHT = '#F5B731';
-const BG          = '#0B1120';
-const SURFACE     = '#131C2E';
-const BORDER      = 'rgba(255,255,255,0.06)';
-const TEXT        = '#F1F5F9';
-const TEXT_MUTED  = '#7A90A8';
-const MOSS        = '#34D399';
-const TERRA       = '#F87171';
+import ScreenHeader from './ui/ScreenHeader';
+import Eyebrow from './ui/Eyebrow';
+import HexDivider from './ui/HexDivider';
+import PillChip from './ui/PillChip';
+import { COLORS, FONT } from '../theme';
 
 const VERDICT_COLOR: Record<RouteComparison['verdict'], string> = {
-  best:  MOSS,
-  mid:   AMBER,
-  worst: TERRA,
-  only:  AMBER,
+  best:  COLORS.petroleo,
+  mid:   COLORS.amberBright,
+  worst: COLORS.danger,
+  only:  COLORS.amberBright,
 };
 
 const IMPORT_ORIGINS = [
@@ -32,24 +27,18 @@ const MAX_ORIGINS = 5;
 const fmtBRL = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const AMBER_BTN_STYLE: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-  background: 'transparent',
-  border: '0.5px solid rgba(212,144,10,0.4)',
-  borderRadius: 4,
-  color: AMBER,
-  padding: '4px 10px',
-  cursor: 'pointer',
-  fontSize: 10,
-  fontFamily: 'ui-monospace, Consolas, monospace',
-  letterSpacing: '0.06em',
-  transition: 'background 0.15s',
-  whiteSpace: 'nowrap',
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: 1.5,
+  color: COLORS.textSecondary, marginBottom: 8, textTransform: 'uppercase' as const,
+  fontFamily: FONT,
 };
 
-function handleAmberHover(e: React.MouseEvent<HTMLButtonElement>, entering: boolean) {
-  e.currentTarget.style.background = entering ? 'rgba(212,144,10,0.1)' : 'transparent';
-}
+const INPUT_STYLE: React.CSSProperties = {
+  width: '100%', background: COLORS.bg, border: `1px solid ${COLORS.line}`,
+  borderRadius: 6, color: COLORS.textPrimary, fontSize: 14,
+  padding: '10px 12px', outline: 'none', boxSizing: 'border-box',
+  fontFamily: FONT,
+};
 
 interface Props {
   onBack: () => void;
@@ -96,53 +85,29 @@ export default function ComparatorScreen({ onBack }: Props) {
   const maxCost = result ? Math.max(...result.comparisons.map(c => c.landed_cost_brl)) : 0;
 
   return (
-    <div style={{
-      minHeight: '100vh', background: BG, color: TEXT,
-      fontFamily: 'system-ui, sans-serif',
-    }}>
-      {/* Header */}
-      <div style={{
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '14px 28px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button onClick={onBack} style={AMBER_BTN_STYLE}
-            onMouseEnter={e => handleAmberHover(e, true)}
-            onMouseLeave={e => handleAmberHover(e, false)}>
-            {t('back')}
-          </button>
-          <div style={{
-            fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: AMBER_LIGHT,
-            fontFamily: 'ui-monospace, Consolas, monospace',
-          }}>{t('route_comparator')}</div>
-        </div>
-        <LangToggle />
-      </div>
+    <div style={{ minHeight: '100vh', color: COLORS.textPrimary, fontFamily: FONT }}>
+      <ScreenHeader
+        title={t('route_comparator')}
+        backLabel={t('back')}
+        onBack={onBack}
+        right={<LangToggle />}
+      />
 
       <main style={{ padding: '24px 28px 60px', maxWidth: 1200, margin: '0 auto' }}>
 
         {/* Config section */}
         <div style={{
-          background: SURFACE, border: `1px solid ${BORDER}`,
-          borderRadius: 8, padding: '20px 24px', marginBottom: 24,
+          background: COLORS.panel, border: '1px solid rgba(255,255,255,0.04)',
+          borderRadius: 10, padding: '20px 24px', marginBottom: 24,
           display: 'flex', flexDirection: 'column', gap: 18,
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
             <div>
-              <label style={{
-                display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 1.5,
-                color: TEXT_MUTED, marginBottom: 8, textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-              }}>{t('commodity_label')}</label>
+              <label style={LABEL_STYLE}>{t('commodity_label')}</label>
               <select
                 value={commodity}
                 onChange={e => setCommodity(e.target.value)}
-                style={{
-                  width: '100%', background: BG, border: `1px solid ${BORDER}`,
-                  borderRadius: 6, color: TEXT, fontSize: 14,
-                  padding: '10px 12px', outline: 'none', cursor: 'pointer',
-                }}
+                style={{ ...INPUT_STYLE, cursor: 'pointer' }}
               >
                 <option value="coffee">Coffee</option>
                 <option value="soybeans">Soybeans</option>
@@ -151,46 +116,29 @@ export default function ComparatorScreen({ onBack }: Props) {
             </div>
 
             <div>
-              <label style={{
-                display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 1.5,
-                color: TEXT_MUTED, marginBottom: 8, textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-              }}>{t('destination_label')}</label>
+              <label style={LABEL_STYLE}>{t('destination_label')}</label>
               <div style={{
-                background: '#0A1628', border: `1px solid ${AMBER}44`,
-                borderRadius: 6, color: AMBER, fontSize: 13,
-                padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
-                fontWeight: 600, letterSpacing: 0.5,
+                background: 'rgba(0,0,0,0.2)', border: `1px solid ${COLORS.amber}44`,
+                borderRadius: 6, color: COLORS.amberBright, fontSize: 13,
+                padding: '10px 12px', fontFamily: FONT,
+                fontWeight: 700, letterSpacing: 0.5,
               }}>⬡ Brazil</div>
             </div>
 
             <div>
-              <label style={{
-                display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 1.5,
-                color: TEXT_MUTED, marginBottom: 8, textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-              }}>{t('cif_value')}</label>
+              <label style={LABEL_STYLE}>{t('cif_value')}</label>
               <input
                 type="number"
                 min={1}
                 value={cifValue}
                 onChange={e => setCifValue(Number(e.target.value))}
-                style={{
-                  width: '100%', background: BG, border: `1px solid ${BORDER}`,
-                  borderRadius: 6, color: TEXT, fontSize: 14,
-                  padding: '10px 12px', outline: 'none', boxSizing: 'border-box',
-                  fontFamily: 'ui-monospace, Consolas, monospace',
-                }}
+                style={INPUT_STYLE}
               />
             </div>
           </div>
 
           <div>
-            <label style={{
-              display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 1.5,
-              color: TEXT_MUTED, marginBottom: 10, textTransform: 'uppercase' as const,
-              fontFamily: 'ui-monospace, Consolas, monospace',
-            }}>{t('select_origins')} ({origins.length}/{MAX_ORIGINS})</label>
+            <label style={{ ...LABEL_STYLE, marginBottom: 10 }}>{t('select_origins')} ({origins.length}/{MAX_ORIGINS})</label>
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
               {IMPORT_ORIGINS.map(o => {
                 const active = origins.includes(o);
@@ -204,11 +152,11 @@ export default function ComparatorScreen({ onBack }: Props) {
                     style={{
                       padding: '6px 14px',
                       fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
-                      fontFamily: 'ui-monospace, Consolas, monospace',
-                      background: active ? AMBER : 'transparent',
-                      color: active ? '#000' : disabled ? '#3A4A60' : TEXT_MUTED,
-                      border: `1px solid ${active ? AMBER : BORDER}`,
-                      borderRadius: 4, cursor: disabled ? 'not-allowed' : 'pointer',
+                      fontFamily: FONT,
+                      background: active ? COLORS.amber : 'transparent',
+                      color: active ? '#1A1204' : disabled ? '#3A4A60' : COLORS.textSecondary,
+                      border: `1px solid ${active ? COLORS.amber : COLORS.line}`,
+                      borderRadius: 20, cursor: disabled ? 'not-allowed' : 'pointer',
                       transition: 'all 0.15s',
                     }}
                   >
@@ -224,10 +172,10 @@ export default function ComparatorScreen({ onBack }: Props) {
             disabled={!canCompare}
             style={{
               alignSelf: 'flex-start',
-              background: canCompare ? AMBER : 'rgba(212,144,10,0.25)',
-              color: canCompare ? '#000' : '#7A5F1E',
+              background: canCompare ? COLORS.amber : 'rgba(217,119,6,0.25)',
+              color: canCompare ? '#1A1204' : '#7A5F1E',
               fontWeight: 700, fontSize: 12, letterSpacing: 2,
-              fontFamily: 'ui-monospace, Consolas, monospace',
+              fontFamily: FONT,
               border: 'none', borderRadius: 6, cursor: canCompare ? 'pointer' : 'not-allowed',
               padding: '11px 28px', textTransform: 'uppercase' as const,
             }}
@@ -239,15 +187,15 @@ export default function ComparatorScreen({ onBack }: Props) {
         {/* Loading state */}
         {loading && (
           <div style={{
-            textAlign: 'center', padding: '40px 0', color: TEXT_MUTED,
-            fontSize: 13, fontFamily: 'ui-monospace, Consolas, monospace',
+            textAlign: 'center', padding: '40px 0', color: COLORS.textSecondary,
+            fontSize: 13, fontFamily: FONT,
           }}>
             ⬡ {t('analyzing_routes')} ({origins.length})
           </div>
         )}
 
         {error && (
-          <div style={{ color: TERRA, fontSize: 13, marginBottom: 16 }}>{error}</div>
+          <div style={{ color: COLORS.danger, fontSize: 13, marginBottom: 16 }}>{error}</div>
         )}
 
         {/* Results */}
@@ -256,30 +204,26 @@ export default function ComparatorScreen({ onBack }: Props) {
 
             {/* Comparative bar */}
             <div style={{
-              background: SURFACE, border: `1px solid ${BORDER}`,
-              borderRadius: 8, padding: '18px 22px',
+              background: COLORS.panel, border: '1px solid rgba(255,255,255,0.04)',
+              borderRadius: 10, padding: '18px 22px',
               display: 'flex', flexDirection: 'column', gap: 10,
             }}>
-              <div style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
-                textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 4,
-              }}>{t('landed_cost')} · {t('select_origins')}</div>
+              <Eyebrow>{t('landed_cost')} · {t('select_origins')}</Eyebrow>
               {result.comparisons.map(c => {
                 const pct = maxCost > 0 ? (c.landed_cost_brl / maxCost) * 100 : 0;
                 const col = VERDICT_COLOR[c.verdict];
                 return (
                   <div key={c.origin} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{
-                      width: 110, fontSize: 11, color: TEXT,
-                      fontFamily: 'ui-monospace, Consolas, monospace', flexShrink: 0,
+                      width: 110, fontSize: 11, color: COLORS.textPrimary,
+                      fontFamily: FONT, flexShrink: 0,
                     }}>{c.origin}</span>
-                    <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 4 }} />
+                    <div style={{ flex: 1, height: 8, background: 'rgba(245,243,238,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 4, transition: 'width 0.4s ease' }} />
                     </div>
                     <span style={{
                       width: 130, textAlign: 'right', fontSize: 11, fontWeight: 700, color: col,
-                      fontFamily: 'ui-monospace, Consolas, monospace', flexShrink: 0,
+                      fontFamily: FONT, flexShrink: 0,
                     }}>{fmtBRL(c.landed_cost_brl)}</span>
                   </div>
                 );
@@ -289,21 +233,19 @@ export default function ComparatorScreen({ onBack }: Props) {
             {/* AI Recommendation */}
             {result.recommendation && (
               <div style={{
-                background: `${AMBER}0D`,
-                border: `1px solid ${AMBER}33`,
-                borderRadius: 6, padding: '16px 18px',
+                background: 'rgba(245,158,11,0.06)',
+                border: `1px solid ${COLORS.amber}33`,
+                borderRadius: 8, padding: '16px 18px',
                 display: 'flex', flexDirection: 'column', gap: 8,
               }}>
-                <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
-                  color: AMBER_LIGHT, textTransform: 'uppercase' as const,
-                }}>{t('ai_recommendation')}</span>
-                <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.75 }}>
+                <Eyebrow>{t('ai_recommendation')}</Eyebrow>
+                <div style={{ fontSize: 13, color: COLORS.textPrimary, lineHeight: 1.75 }}>
                   {result.recommendation}
                 </div>
               </div>
             )}
+
+            <HexDivider />
 
             {/* Card grid */}
             <div style={{
@@ -335,43 +277,37 @@ function ComparisonCard({ comparison, t }: { comparison: RouteComparison; t: (k:
 
   return (
     <div style={{
-      background: SURFACE,
+      background: COLORS.panel,
       border: `1px solid ${col}`,
-      borderRadius: 8, padding: '18px 20px',
+      borderRadius: 10, padding: '18px 20px',
       display: 'flex', flexDirection: 'column', gap: 12,
       opacity: comparison.verdict === 'worst' ? 0.85 : 1,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>
             {comparison.origin}
           </div>
-          <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 2 }}>
+          <div style={{ fontSize: 10, color: COLORS.textSecondary, marginTop: 2, fontFamily: FONT }}>
             {comparison.trade_agreement}
             {comparison.ii_reduction_pct > 0 && ` · ${comparison.ii_reduction_pct}% II reduction`}
           </div>
         </div>
-        <span style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: 0.8,
-          fontFamily: 'ui-monospace, Consolas, monospace',
-          color: col, background: `${col}22`,
-          border: `1px solid ${col}55`,
-          padding: '3px 8px', borderRadius: 3, whiteSpace: 'nowrap' as const,
-        }}>{badgeLabel}</span>
+        <PillChip color={col}>{badgeLabel}</PillChip>
       </div>
 
       <div>
         <div style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: TEXT_MUTED,
+          fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: COLORS.textSecondary,
           textTransform: 'uppercase' as const,
-          fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 4,
+          fontFamily: FONT, marginBottom: 4,
         }}>{t('landed_cost')}</div>
         <div style={{
-          fontFamily: 'ui-monospace, Consolas, monospace',
-          fontSize: 26, fontWeight: 700, color: col,
+          fontFamily: FONT,
+          fontSize: 26, fontWeight: 800, color: col,
         }}>{fmtBRL(comparison.landed_cost_brl)}</div>
         {typeof comparison.savings_vs_worst === 'number' && comparison.savings_vs_worst > 0 && (
-          <div style={{ fontSize: 10, color: MOSS, marginTop: 2 }}>
+          <div style={{ fontSize: 10, color: COLORS.petroleo, marginTop: 2, fontFamily: FONT }}>
             +{fmtBRL(comparison.savings_vs_worst)} {t('savings_vs')}
           </div>
         )}
@@ -379,23 +315,23 @@ function ComparisonCard({ comparison, t }: { comparison: RouteComparison; t: (k:
 
       <div style={{ display: 'flex', gap: 16 }}>
         <div>
-          <div style={{ fontSize: 9, color: TEXT_MUTED, textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace' }}>{t('transit')}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>{comparison.transit_days}d</div>
+          <div style={{ fontSize: 9, color: COLORS.textSecondary, textTransform: 'uppercase' as const, fontFamily: FONT }}>{t('transit')}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>{comparison.transit_days}d</div>
         </div>
         <div>
-          <div style={{ fontSize: 9, color: TEXT_MUTED, textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace' }}>Risk</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>{comparison.total_risk_score}/100</div>
+          <div style={{ fontSize: 9, color: COLORS.textSecondary, textTransform: 'uppercase' as const, fontFamily: FONT }}>Risk</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>{comparison.total_risk_score}/100</div>
         </div>
         {calc && (
           <div>
-            <div style={{ fontSize: 9, color: TEXT_MUTED, textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace' }}>{t('tax_burden')}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: 'ui-monospace, Consolas, monospace' }}>{calc.tax_burden_pct}%</div>
+            <div style={{ fontSize: 9, color: COLORS.textSecondary, textTransform: 'uppercase' as const, fontFamily: FONT }}>{t('tax_burden')}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>{calc.tax_burden_pct}%</div>
           </div>
         )}
       </div>
 
       {calc && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: `1px solid ${BORDER}`, paddingTop: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: `1px solid ${COLORS.line}`, paddingTop: 10 }}>
           {[
             { label: 'CIF', value: fmtBRL(calc.cif_brl) },
             { label: `II (${calc.ii_rate_applied}%)`, value: fmtBRL(calc.ii_value) },
@@ -403,15 +339,15 @@ function ComparisonCard({ comparison, t }: { comparison: RouteComparison; t: (k:
             { label: 'PIS/COFINS', value: fmtBRL(calc.pis_cofins_value) },
             { label: 'ICMS', value: fmtBRL(calc.icms_value) },
           ].map((row, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: 'ui-monospace, Consolas, monospace' }}>
-              <span style={{ color: TEXT_MUTED }}>{row.label}</span>
-              <span style={{ color: TEXT }}>{row.value}</span>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: FONT }}>
+              <span style={{ color: COLORS.textSecondary }}>{row.label}</span>
+              <span style={{ color: COLORS.textPrimary }}>{row.value}</span>
             </div>
           ))}
-          <div style={{ height: 1, background: BORDER, margin: '2px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, fontFamily: 'ui-monospace, Consolas, monospace' }}>
-            <span style={{ color: TEXT_MUTED }}>{t('total_taxes')}</span>
-            <span style={{ color: TEXT }}>{fmtBRL(calc.total_taxes_brl)}</span>
+          <div style={{ height: 1, background: COLORS.line, margin: '2px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, fontFamily: FONT }}>
+            <span style={{ color: COLORS.textSecondary }}>{t('total_taxes')}</span>
+            <span style={{ color: COLORS.textPrimary }}>{fmtBRL(calc.total_taxes_brl)}</span>
           </div>
         </div>
       )}

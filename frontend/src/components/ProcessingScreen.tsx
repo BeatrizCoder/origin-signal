@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AnalyzeResponse } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import Logo from './ui/Logo';
+import PipelineStrip from './ui/PipelineStrip';
+import { COLORS, FONT } from '../theme';
 
-const AMBER    = '#D4900A';
-const BG       = '#0B1120';
-const TEXT     = '#F1F5F9';
-const TEXT_MUTED = '#7A90A8';
-
-const ENGINES = [
-  'Climate Engine',
-  'Regulatory Engine',
-  'Market Engine',
-  'Logistics Engine',
-  'Honeycomb Intelligence',
-  'AI Decision Engine',
+const ENGINE_STEPS = [
+  { id: 'climate',    icon: '🌦', label: 'Climate Engine' },
+  { id: 'regulatory', icon: '⚖',  label: 'Regulatory Engine' },
+  { id: 'market',     icon: '📈', label: 'Market Engine' },
+  { id: 'logistics',  icon: '🚢', label: 'Logistics Engine' },
+  { id: 'honeycomb',  icon: '🐝', label: 'Honeycomb Intelligence' },
+  { id: 'executive',  icon: '🧠', label: 'AI Decision Engine' },
 ];
 
 const TOTAL_MS   = 4000;
@@ -43,8 +41,8 @@ export default function ProcessingScreen({ result, error, onComplete, onRetry }:
       });
     }, 40);
 
-    const timers = ENGINES.map((_, i) =>
-      setTimeout(() => setEngineCount(c => Math.min(c + 1, ENGINES.length)), (i + 1) * ENGINE_GAP)
+    const timers = ENGINE_STEPS.map((_, i) =>
+      setTimeout(() => setEngineCount(c => Math.min(c + 1, ENGINE_STEPS.length)), (i + 1) * ENGINE_GAP)
     );
 
     const completionTimer = setTimeout(() => setAnimDone(true), TOTAL_MS);
@@ -65,83 +63,46 @@ export default function ProcessingScreen({ result, error, onComplete, onRetry }:
 
   return (
     <div style={{
-      minHeight: '100vh', background: BG, color: TEXT,
+      minHeight: '100vh', color: COLORS.textPrimary,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: '0 24px',
     }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 52 }}>
-        <span style={{
-          background: AMBER, color: '#000',
-          fontFamily: 'ui-monospace, Consolas, monospace',
-          fontWeight: 700, fontSize: 14, letterSpacing: 1,
-          padding: '6px 10px', borderRadius: 4,
-        }}>OS</span>
-        <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 3, color: TEXT }}>
-          ORIGINSIGNAL
-        </span>
+      <div style={{ marginBottom: 52 }}>
+        <Logo size="sm" stacked={false} />
       </div>
 
-      <div style={{ width: '100%', maxWidth: 380 }}>
+      <div style={{ width: '100%', maxWidth: 460 }}>
         {/* Title */}
         <div style={{
           fontSize: 12, fontWeight: 600, letterSpacing: 2,
-          color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace',
-          marginBottom: 32, textTransform: 'uppercase' as const,
+          color: COLORS.textSecondary, fontFamily: FONT,
+          marginBottom: 24, textTransform: 'uppercase' as const, textAlign: 'center' as const,
         }}>
           {t('initializing')}
         </div>
 
-        {/* Engine list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 44 }}>
-          {ENGINES.map((engine, i) => {
-            const done = i < engineCount;
-            return (
-              <div
-                key={engine}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  opacity: done ? 1 : 0.18,
-                  transition: 'opacity 0.5s ease',
-                }}
-              >
-                <span style={{
-                  color: done ? AMBER : TEXT_MUTED,
-                  fontSize: 14, fontWeight: 700,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
-                  flexShrink: 0, width: 16, textAlign: 'center' as const,
-                }}>
-                  {done ? '✓' : '○'}
-                </span>
-                <span style={{
-                  fontFamily: 'ui-monospace, Consolas, monospace',
-                  fontSize: 13, letterSpacing: 0.5,
-                  color: done ? TEXT : TEXT_MUTED,
-                }}>
-                  {engine}
-                </span>
-              </div>
-            );
-          })}
+        {/* Pipeline strip */}
+        <div style={{ marginBottom: 40 }}>
+          <PipelineStrip steps={ENGINE_STEPS} activeCount={engineCount} />
         </div>
 
         {/* Progress bar */}
         <div style={{
-          height: 2, background: 'rgba(255,255,255,0.06)',
+          height: 2, background: 'rgba(245,243,238,0.06)',
           borderRadius: 2, overflow: 'hidden', marginBottom: 8,
         }}>
           <div style={{
             height: '100%',
             width: `${Math.round(progress)}%`,
-            background: AMBER,
+            background: COLORS.amberBright,
             borderRadius: 2,
             transition: 'width 0.04s linear',
           }} />
         </div>
         <div style={{
-          fontFamily: 'ui-monospace, Consolas, monospace',
-          fontSize: 10, color: TEXT_MUTED,
+          fontFamily: FONT,
+          fontSize: 10, color: COLORS.textSecondary,
           textAlign: 'right' as const,
         }}>
           {Math.round(progress)}%
@@ -151,25 +112,26 @@ export default function ProcessingScreen({ result, error, onComplete, onRetry }:
         {error && (
           <div style={{
             marginTop: 36,
-            background: '#1A0808', border: '1px solid #5C1A1A',
-            borderRadius: 6, padding: 16,
+            background: 'rgba(220,38,38,0.08)', border: `1px solid ${COLORS.danger}55`,
+            borderRadius: 8, padding: 16,
             display: 'flex', flexDirection: 'column', gap: 12,
           }}>
-            <div style={{ color: '#F87171', fontSize: 13, lineHeight: 1.6 }}>
-              ⚠ {error}
+            <div style={{ color: '#F87171', fontSize: 13, lineHeight: 1.6, fontFamily: FONT }}>
+              <i className="fas fa-triangle-exclamation" style={{ marginRight: 6 }} />
+              {error}
             </div>
             <button
               onClick={onRetry}
               style={{
                 alignSelf: 'flex-start',
-                background: 'none', border: '1px solid #5C1A1A',
-                borderRadius: 4, color: '#F87171',
+                background: 'none', border: `1px solid ${COLORS.danger}55`,
+                borderRadius: 6, color: '#F87171',
                 padding: '6px 14px', cursor: 'pointer',
-                fontSize: 11, fontFamily: 'ui-monospace, Consolas, monospace',
+                fontSize: 11, fontFamily: FONT,
                 letterSpacing: 1, textTransform: 'uppercase' as const,
               }}
             >
-              ← TRY AGAIN
+              <i className="fas fa-arrow-left" style={{ marginRight: 6 }} /> Try again
             </button>
           </div>
         )}

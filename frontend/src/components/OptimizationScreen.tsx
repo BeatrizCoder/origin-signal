@@ -3,50 +3,36 @@ import type { OptimizationResult, OptimizationRegion } from '../types';
 import { optimizeHoneycomb } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
-
-const AMBER       = '#D4900A';
-const AMBER_LIGHT = '#F5B731';
-const BG          = '#0B1120';
-const SURFACE     = '#131C2E';
-const BORDER      = 'rgba(255,255,255,0.06)';
-const TEXT        = '#F1F5F9';
-const TEXT_MUTED  = '#7A90A8';
-const MOSS        = '#34D399';
+import ScreenHeader from './ui/ScreenHeader';
+import Eyebrow from './ui/Eyebrow';
+import { COLORS, FONT } from '../theme';
 
 const MIN_BUDGET  = 50_000;
 const MAX_BUDGET  = 2_000_000;
 const STEP_BUDGET = 50_000;
 
 const PRIORITY_BADGE: Record<number, { bg: string; text: string }> = {
-  1: { bg: '#3D2E00', text: '#FFD700' },
-  2: { bg: '#2A2A2A', text: '#C0C0C0' },
-  3: { bg: '#3D2410', text: '#CD7F32' },
+  1: { bg: 'rgba(245,158,11,0.16)', text: COLORS.amberBright },
+  2: { bg: 'rgba(170,180,197,0.14)', text: COLORS.textSecondary },
+  3: { bg: 'rgba(180,83,9,0.16)', text: COLORS.bronze },
 };
 
 const fmtBRL = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
 
-const AMBER_BTN_STYLE: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-  background: 'transparent',
-  border: '0.5px solid rgba(212,144,10,0.4)',
-  borderRadius: 4,
-  color: AMBER,
-  padding: '4px 10px',
-  cursor: 'pointer',
-  fontSize: 10,
-  fontFamily: 'ui-monospace, Consolas, monospace',
-  letterSpacing: '0.06em',
-  transition: 'background 0.15s',
-  whiteSpace: 'nowrap',
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: 1.5,
+  color: COLORS.textSecondary, marginBottom: 10, textTransform: 'uppercase' as const,
+  fontFamily: FONT,
 };
 
-function handleAmberHover(e: React.MouseEvent<HTMLButtonElement>, entering: boolean) {
-  e.currentTarget.style.background = entering ? 'rgba(212,144,10,0.1)' : 'transparent';
-}
+const CARD: React.CSSProperties = {
+  background: COLORS.panel, border: '1px solid rgba(255,255,255,0.04)',
+  borderRadius: 10, padding: '20px 24px',
+};
 
 function priorityBadgeStyle(priority: number): { bg: string; text: string } {
-  return PRIORITY_BADGE[priority] ?? { bg: 'rgba(255,255,255,0.06)', text: TEXT_MUTED };
+  return PRIORITY_BADGE[priority] ?? { bg: 'rgba(245,243,238,0.06)', text: COLORS.textSecondary };
 }
 
 interface Props {
@@ -99,50 +85,25 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
   const budgetPct = result ? Math.min(100, (result.budget_used_brl / result.budget_brl) * 100) : 0;
 
   return (
-    <div style={{
-      minHeight: '100vh', background: BG, color: TEXT,
-      fontFamily: 'system-ui, sans-serif',
-    }}>
-      {/* Header */}
-      <div style={{
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '14px 28px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button onClick={onBack} style={AMBER_BTN_STYLE}
-            onMouseEnter={e => handleAmberHover(e, true)}
-            onMouseLeave={e => handleAmberHover(e, false)}>
-            {t('back')}
-          </button>
-          <div style={{
-            fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: AMBER_LIGHT,
-            fontFamily: 'ui-monospace, Consolas, monospace',
-          }}>⬡ {t('optimization_engine')}</div>
-        </div>
-        <LangToggle />
-      </div>
+    <div style={{ minHeight: '100vh', color: COLORS.textPrimary, fontFamily: FONT }}>
+      <ScreenHeader
+        title={t('optimization_engine')}
+        backLabel={t('back')}
+        onBack={onBack}
+        right={<LangToggle />}
+      />
 
       <main style={{ padding: '24px 28px 60px', maxWidth: 1100, margin: '0 auto' }}>
 
-        <div style={{
-          fontSize: 12, color: TEXT_MUTED, marginBottom: 24,
-          fontFamily: 'ui-monospace, Consolas, monospace',
-        }}>{t('optimization_subtitle')}</div>
+        <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 24, fontFamily: FONT }}>
+          {t('optimization_subtitle')}
+        </div>
 
         {/* Config section */}
-        <div style={{
-          background: SURFACE, border: `1px solid ${BORDER}`,
-          borderRadius: 8, padding: '20px 24px', marginBottom: 24,
-          display: 'flex', flexDirection: 'column', gap: 18,
-        }}>
+        <div style={{ ...CARD, marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
             <div>
-              <label style={{
-                display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 1.5,
-                color: TEXT_MUTED, marginBottom: 10, textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-              }}>{t('budget_label')}</label>
+              <label style={LABEL_STYLE}>{t('budget_label')}</label>
               <input
                 type="range"
                 min={MIN_BUDGET}
@@ -150,27 +111,22 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
                 step={STEP_BUDGET}
                 value={budget}
                 onChange={e => setBudget(Number(e.target.value))}
-                style={{ width: '100%', accentColor: AMBER, cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: COLORS.amber, cursor: 'pointer' }}
               />
-              <div style={{
-                fontFamily: 'ui-monospace, Consolas, monospace',
-                fontSize: 22, fontWeight: 700, color: AMBER_LIGHT, marginTop: 8,
-              }}>{fmtBRL(budget)}</div>
+              <div style={{ fontFamily: FONT, fontSize: 22, fontWeight: 800, color: COLORS.amberBright, marginTop: 8 }}>
+                {fmtBRL(budget)}
+              </div>
             </div>
 
             <div>
-              <label style={{
-                display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 1.5,
-                color: TEXT_MUTED, marginBottom: 10, textTransform: 'uppercase' as const,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-              }}>{t('commodity_label')}</label>
+              <label style={LABEL_STYLE}>{t('commodity_label')}</label>
               <select
                 value={commodity}
                 onChange={e => setCommodity(e.target.value)}
                 style={{
-                  width: '100%', background: BG, border: `1px solid ${BORDER}`,
-                  borderRadius: 6, color: TEXT, fontSize: 14,
-                  padding: '10px 12px', outline: 'none', cursor: 'pointer',
+                  width: '100%', background: COLORS.bg, border: `1px solid ${COLORS.line}`,
+                  borderRadius: 6, color: COLORS.textPrimary, fontSize: 14,
+                  padding: '10px 12px', outline: 'none', cursor: 'pointer', fontFamily: FONT,
                 }}
               >
                 <option value="coffee">Coffee</option>
@@ -185,10 +141,10 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
             disabled={loading}
             style={{
               alignSelf: 'flex-start',
-              background: loading ? 'rgba(212,144,10,0.25)' : AMBER,
-              color: loading ? '#7A5F1E' : '#000',
+              background: loading ? 'rgba(217,119,6,0.25)' : COLORS.amber,
+              color: loading ? '#7A5F1E' : '#1A1204',
               fontWeight: 700, fontSize: 12, letterSpacing: 2,
-              fontFamily: 'ui-monospace, Consolas, monospace',
+              fontFamily: FONT,
               border: 'none', borderRadius: 6, cursor: loading ? 'not-allowed' : 'pointer',
               padding: '11px 28px', textTransform: 'uppercase' as const,
             }}
@@ -198,7 +154,7 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
         </div>
 
         {error && (
-          <div style={{ color: '#F87171', fontSize: 13, marginBottom: 16 }}>{error}</div>
+          <div style={{ color: COLORS.danger, fontSize: 13, marginBottom: 16 }}>{error}</div>
         )}
 
         {/* Results */}
@@ -207,88 +163,56 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
 
             {/* 3 impact cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              <div style={{
-                background: SURFACE, border: `1px solid ${BORDER}`,
-                borderRadius: 8, padding: '16px 18px',
-                display: 'flex', flexDirection: 'column', gap: 8,
-              }}>
-                <div style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
-                  textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
-                }}>{t('budget_used')}</div>
-                <div style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 16, color: TEXT }}>
+              <div style={{ ...CARD, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Eyebrow>{t('budget_used')}</Eyebrow>
+                <div style={{ fontFamily: FONT, fontSize: 16, color: COLORS.textPrimary }}>
                   {fmtBRL(result.budget_used_brl)} / {fmtBRL(result.budget_brl)}
                 </div>
-                <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${budgetPct}%`, background: AMBER, borderRadius: 3 }} />
+                <div style={{ height: 6, background: 'rgba(245,243,238,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${budgetPct}%`, background: COLORS.amber, borderRadius: 3, transition: 'width 0.4s ease' }} />
                 </div>
               </div>
 
-              <div style={{
-                background: SURFACE, border: `1px solid ${BORDER}`,
-                borderRadius: 8, padding: '16px 18px',
-                display: 'flex', flexDirection: 'column', gap: 6,
-              }}>
-                <div style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
-                  textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
-                }}>{t('regions_selected')}</div>
-                <div style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 36, fontWeight: 700, color: AMBER_LIGHT }}>
+              <div style={{ ...CARD, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <Eyebrow>{t('regions_selected')}</Eyebrow>
+                <div style={{ fontFamily: FONT, fontSize: 36, fontWeight: 800, color: COLORS.amberBright }}>
                   {result.total_regions_selected}
                 </div>
               </div>
 
-              <div style={{
-                background: SURFACE, border: `1px solid ${BORDER}`,
-                borderRadius: 8, padding: '16px 18px',
-                display: 'flex', flexDirection: 'column', gap: 6,
-              }}>
-                <div style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
-                  textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
-                }}>{t('volume_unlocked')}</div>
-                <div style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 36, fontWeight: 700, color: MOSS }}>
-                  {result.total_unlock_kt} <span style={{ fontSize: 14, color: TEXT_MUTED }}>kt</span>
+              <div style={{ ...CARD, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <Eyebrow>{t('volume_unlocked')}</Eyebrow>
+                <div style={{ fontFamily: FONT, fontSize: 36, fontWeight: 800, color: COLORS.petroleo }}>
+                  {result.total_unlock_kt} <span style={{ fontSize: 14, color: COLORS.textSecondary }}>kt</span>
                 </div>
               </div>
             </div>
 
             {/* HES before -> after */}
-            <div style={{
-              background: SURFACE, border: `1px solid ${BORDER}`,
-              borderRadius: 8, padding: '20px 24px',
-              display: 'flex', flexDirection: 'column', gap: 12,
-            }}>
-              <div style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
-                textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
-              }}>{t('hes_improvement')}</div>
+            <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Eyebrow>{t('hes_improvement')}</Eyebrow>
               <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <span style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 40, fontWeight: 700, color: '#F87171' }}>
+                <span style={{ fontFamily: FONT, fontSize: 40, fontWeight: 800, color: COLORS.danger }}>
                   {dispCurrent}%
                 </span>
-                <span style={{ fontSize: 24, color: TEXT_MUTED }}>→</span>
-                <span style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 40, fontWeight: 700, color: MOSS }}>
+                <span style={{ fontSize: 24, color: COLORS.textSecondary }}>→</span>
+                <span style={{ fontFamily: FONT, fontSize: 40, fontWeight: 800, color: COLORS.petroleo }}>
                   {dispProjected}%
                 </span>
-                <span style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 16, color: AMBER_LIGHT }}>
+                <span style={{ fontFamily: FONT, fontSize: 16, color: COLORS.amberBright }}>
                   (+{result.hes_gain}pp)
                 </span>
               </div>
             </div>
 
             {/* Selected regions table */}
-            <div style={{
-              background: SURFACE, border: `1px solid ${BORDER}`,
-              borderRadius: 8, padding: '20px 24px',
-              display: 'flex', flexDirection: 'column', gap: 12,
-            }}>
+            <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '70px 1.3fr 1fr 1fr 1fr 1.2fr',
-                gap: 8, fontSize: 9, fontWeight: 700, letterSpacing: 1, color: TEXT_MUTED,
-                textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
-                paddingBottom: 8, borderBottom: `1px solid ${BORDER}`,
+                gap: 8, fontSize: 9, fontWeight: 700, letterSpacing: 1, color: COLORS.textSecondary,
+                textTransform: 'uppercase' as const, fontFamily: FONT,
+                paddingBottom: 8, borderBottom: `1px solid ${COLORS.line}`,
               }}>
                 <span>{t('priority')}</span>
                 <span>Region</span>
@@ -304,22 +228,22 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
                     display: 'grid',
                     gridTemplateColumns: '70px 1.3fr 1fr 1fr 1fr 1.2fr',
                     gap: 8, alignItems: 'center', fontSize: 12,
-                    fontFamily: 'ui-monospace, Consolas, monospace',
+                    fontFamily: FONT,
                   }}>
                     <span style={{
                       fontSize: 9, fontWeight: 700, letterSpacing: 0.6,
                       padding: '3px 8px', borderRadius: 3, alignSelf: 'start',
                       background: badge.bg, color: badge.text,
                     }}>#{r.priority}</span>
-                    <span style={{ color: TEXT }}>{r.region}</span>
-                    <span style={{ color: TEXT }}>R$ {(r.cost_brl_k * 1000).toLocaleString('pt-BR')}</span>
-                    <span style={{ color: MOSS }}>{r.unlock_kt} kt</span>
-                    <span style={{ color: TEXT_MUTED }}>{r.current_risk}/100</span>
+                    <span style={{ color: COLORS.textPrimary }}>{r.region}</span>
+                    <span style={{ color: COLORS.textPrimary }}>R$ {(r.cost_brl_k * 1000).toLocaleString('pt-BR')}</span>
+                    <span style={{ color: COLORS.petroleo }}>{r.unlock_kt} kt</span>
+                    <span style={{ color: COLORS.textSecondary }}>{r.current_risk}/100</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ flex: 1, height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${(r.roi / maxRoi) * 100}%`, background: AMBER, borderRadius: 3 }} />
+                      <div style={{ flex: 1, height: 5, background: 'rgba(245,243,238,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${(r.roi / maxRoi) * 100}%`, background: COLORS.amber, borderRadius: 3 }} />
                       </div>
-                      <span style={{ color: AMBER_LIGHT, fontSize: 10, minWidth: 42, textAlign: 'right' as const }}>{r.roi.toFixed(3)}</span>
+                      <span style={{ color: COLORS.amberBright, fontSize: 10, minWidth: 42, textAlign: 'right' as const }}>{r.roi.toFixed(3)}</span>
                     </span>
                   </div>
                 );
@@ -328,19 +252,15 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
 
             {/* Mathematical basis */}
             <div style={{
-              background: `${AMBER}0D`, border: `1px solid ${AMBER}33`,
-              borderRadius: 6, padding: '16px 18px',
+              background: 'rgba(245,158,11,0.06)', border: `1px solid ${COLORS.amber}33`,
+              borderRadius: 8, padding: '16px 18px',
               display: 'flex', flexDirection: 'column', gap: 8,
             }}>
-              <span style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
-                fontFamily: 'ui-monospace, Consolas, monospace',
-                color: AMBER_LIGHT, textTransform: 'uppercase' as const,
-              }}>{t('mathematical_basis')}</span>
-              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.75 }}>
+              <Eyebrow>{t('mathematical_basis')}</Eyebrow>
+              <div style={{ fontSize: 13, color: COLORS.textPrimary, lineHeight: 1.75, fontFamily: FONT }}>
                 {result.mathematical_basis}
               </div>
-              <div style={{ fontSize: 11, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+              <div style={{ fontSize: 11, color: COLORS.textSecondary, fontFamily: FONT }}>
                 Learn more about Honeycomb Conjecture →
               </div>
             </div>
@@ -348,14 +268,11 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
             {/* Excluded regions */}
             {result.excluded_regions.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: TEXT_MUTED,
-                  textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
-                }}>{t('excluded_regions')}</div>
+                <Eyebrow>{t('excluded_regions')}</Eyebrow>
                 {result.excluded_regions.map(r => {
                   const additional = Math.max(0, r.cost_brl_k * 1000 - result.budget_remaining_brl);
                   return (
-                    <div key={r.region} style={{ fontSize: 12, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+                    <div key={r.region} style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT }}>
                       {r.region} — {fmtBRL(additional)} {t('additional_needed')}
                     </div>
                   );
@@ -368,8 +285,8 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
               onClick={onAuditPath}
               style={{
                 alignSelf: 'flex-start', background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 12, color: TEXT_MUTED, letterSpacing: 0.5,
-                fontFamily: 'ui-monospace, Consolas, monospace', padding: 0,
+                fontSize: 12, color: COLORS.textSecondary, letterSpacing: 0.5,
+                fontFamily: FONT, padding: 0,
               }}
             >
               {t('audit_path')} →

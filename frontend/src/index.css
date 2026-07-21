@@ -5,9 +5,9 @@
 }
 
 body {
-  background: #0B1120;
-  color: #F1F5F9;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: radial-gradient(ellipse at 20% -10%, #16263E 0%, #0B1220 55%);
+  color: #F5F3EE;
+  font-family: 'Manrope', 'IBM Plex Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

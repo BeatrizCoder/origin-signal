@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getGlobalRisk } from '../services/api';
 import type { CountryRiskScores, GlobalRiskResponse } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { COLORS, FONT } from '../theme';
 
 type Direction = 'export' | 'import';
 type Dimension = 'regulatory' | 'climate' | 'market' | 'overall';
@@ -13,27 +14,27 @@ interface Props {
   onAnalyzeRoute?: (origin: string, destination: string, tradeDirection: TradeDirection) => void;
 }
 
-const AMBER        = '#D4900A';
-const ORANGE       = '#FB923C';
-const BG           = '#0B1120';
-const SIDEBAR_BG   = '#0F1A2E';
-const BORDER_CSS   = 'rgba(255,255,255,0.06)';
-const BORDER       = '#1E2D45';
-const TEXT         = '#F1F5F9';
-const TEXT_MUTED   = '#7A90A8';
+const AMBER        = COLORS.amberBright;
+const ORANGE       = COLORS.bronze;
+const BG           = COLORS.bg;
+const SIDEBAR_BG   = COLORS.panelSoft;
+const BORDER_CSS   = COLORS.line;
+const BORDER       = '#26364F';
+const TEXT         = COLORS.textPrimary;
+const TEXT_MUTED   = COLORS.textSecondary;
 const SIDEBAR_W    = 280;
-const CONTINENT_FILL = '#152238';
-const BRAZIL_FILL  = '#1B2E4A';
+const CONTINENT_FILL = COLORS.panel;
+const BRAZIL_FILL  = COLORS.panelSoft;
 
-const GREEN = '#34D399';
-const YELLOW = '#FBBF24';
-const RED   = '#F87171';
-const GRAY  = '#3A4A61';
+const GREEN  = COLORS.petroleo;
+const YELLOW = COLORS.amberBright;
+const RED    = COLORS.danger;
+const GRAY   = '#3A4A61';
 
 const RISK_COLORS: Record<string, { bg: string; text: string }> = {
-  LOW:    { bg: '#0D3321', text: '#34D399' },
-  MEDIUM: { bg: '#2D1F00', text: '#FBBF24' },
-  HIGH:   { bg: '#2D0D0D', text: '#F87171' },
+  LOW:    { bg: 'rgba(15,118,110,0.16)', text: COLORS.petroleo },
+  MEDIUM: { bg: 'rgba(245,158,11,0.16)', text: COLORS.amberBright },
+  HIGH:   { bg: 'rgba(220,38,38,0.16)',  text: COLORS.danger },
 };
 
 function getColor(score: number | undefined): string {
@@ -184,7 +185,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                 onClick={() => setDirection(d)}
                 style={{
                   padding: '5px 12px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                   border: `1px solid ${direction === d ? AMBER : 'rgba(255,255,255,0.12)'}`,
                   borderRadius: 4,
                   background: direction === d ? AMBER : 'rgba(11,17,32,0.82)',
@@ -204,7 +205,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                 onClick={() => setDimension(dim)}
                 style={{
                   padding: '4px 10px', fontSize: 9, fontWeight: 700, letterSpacing: 1,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                   border: `1px solid ${dimension === dim ? AMBER : 'rgba(255,255,255,0.10)'}`,
                   borderRadius: 4,
                   background: dimension === dim ? 'rgba(212,144,10,0.18)' : 'rgba(11,17,32,0.82)',
@@ -230,7 +231,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
           {[{ color: GREEN, label: 'LOW', range: '< 40' }, { color: YELLOW, label: 'MEDIUM', range: '40–65' }, { color: RED, label: 'HIGH', range: '> 65' }].map(({ color, label, range }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 10, height: 10, borderRadius: 2, background: color + 'CC', border: `1px solid ${color}66` }} />
-              <span style={{ fontSize: 9, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5 }}>
+              <span style={{ fontSize: 9, color: TEXT_MUTED, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', letterSpacing: 0.5 }}>
                 {label} {range}
               </span>
             </div>
@@ -250,7 +251,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
             fill={BRAZIL_FILL} stroke={AMBER} strokeWidth={1.5} strokeOpacity={0.5} />
           <text x={BRAZIL_RECT.x + BRAZIL_RECT.w / 2} y={BRAZIL_RECT.y + BRAZIL_RECT.h / 2}
             textAnchor="middle" fill={AMBER} fontSize={11} fontWeight={700}
-            fontFamily="ui-monospace, Consolas, monospace" letterSpacing={1.5}>
+            fontFamily={FONT} letterSpacing={1.5}>
             BRAZIL
           </text>
 
@@ -278,14 +279,14 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                 />
                 <text x={coord.x} y={coord.y + 4} textAnchor="middle"
                   fontSize={10} fontWeight={700} fill="#00000099"
-                  fontFamily="ui-monospace, Consolas, monospace">{score}</text>
+                  fontFamily={FONT}>{score}</text>
                 <text x={coord.x} y={coord.y + 3} textAnchor="middle"
                   fontSize={10} fontWeight={700} fill="rgba(255,255,255,0.95)"
-                  fontFamily="ui-monospace, Consolas, monospace">{score}</text>
+                  fontFamily={FONT}>{score}</text>
                 <text x={coord.x} y={coord.y - 20} textAnchor="middle"
                   fontSize={8.5} fontWeight={600} fill={TEXT_MUTED}
-                  fontFamily="ui-monospace, Consolas, monospace" letterSpacing={0.3}
-                  textTransform="uppercase" style={{ textTransform: 'uppercase' }}>
+                  fontFamily={FONT} letterSpacing={0.3}
+                  style={{ textTransform: 'uppercase' }}>
                   {country}
                 </text>
 
@@ -308,7 +309,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
           }}>
             <span style={{
               fontSize: 11, fontWeight: 600, letterSpacing: 1.2, color: TEXT_MUTED,
-              fontFamily: 'ui-monospace, Consolas, monospace', textTransform: 'uppercase' as const,
+              fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', textTransform: 'uppercase' as const,
             }}>
               {loading ? '…' : t('no_data')}
             </span>
@@ -327,11 +328,11 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
           }}>
             <div style={{
               fontSize: 11, fontWeight: 700, color: TEXT, letterSpacing: 0.5,
-              fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 6,
+              fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', marginBottom: 6,
               textTransform: 'uppercase' as const,
             }}>{hovered}</div>
             {([['regulatory', hoveredScores.regulatory], ['climate', hoveredScores.climate], ['market', hoveredScores.market], ['logistics', hoveredScores.logistics], ['overall_risk', hoveredScores.overall]] as const).map(([key, val]) => (
-              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 2 }}>
+              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: TEXT_MUTED, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', marginBottom: 2 }}>
                 <span style={{ textTransform: 'uppercase' as const }}>{t(key)}</span>
                 <span style={{ color: getColor(val), fontWeight: 700 }}>{val}</span>
               </div>
@@ -340,7 +341,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
               <div style={{
                 marginTop: 6, paddingTop: 6, borderTop: `1px solid ${BORDER}`,
                 fontSize: 9.5, color: ORANGE, lineHeight: 1.4,
-                fontFamily: 'ui-monospace, Consolas, monospace',
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
               }}>
                 ⚠️ {hoveredScores.tariff_note}
               </div>
@@ -361,7 +362,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <span style={{
                 fontSize: 13, fontWeight: 700, letterSpacing: 0.8, color: TEXT,
-                fontFamily: 'ui-monospace, Consolas, monospace',
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                 textTransform: 'uppercase' as const, lineHeight: 1.4,
               }}>{selected}</span>
               <button
@@ -375,14 +376,14 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
               <div>
                 <div style={{
                   fontSize: 9, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
-                  textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 2,
+                  textTransform: 'uppercase' as const, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', marginBottom: 2,
                 }}>{t('overall_risk')}</div>
-                <div style={{ fontFamily: 'ui-monospace, Consolas, monospace', fontSize: 40, fontWeight: 700, color: AMBER, lineHeight: 1 }}>
+                <div style={{ fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', fontSize: 40, fontWeight: 700, color: AMBER, lineHeight: 1 }}>
                   {selectedScores.overall}
                 </div>
               </div>
               <span style={{
-                fontFamily: 'ui-monospace, Consolas, monospace', fontWeight: 700, fontSize: 9, letterSpacing: 1,
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', fontWeight: 700, fontSize: 9, letterSpacing: 1,
                 padding: '2px 8px', borderRadius: 3, alignSelf: 'flex-start', marginTop: 4,
                 background: RISK_COLORS[riskLabel(selectedScores.overall)].bg,
                 color: RISK_COLORS[riskLabel(selectedScores.overall)].text,
@@ -399,9 +400,9 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                       <span style={{
                         fontSize: 9, fontWeight: 600, letterSpacing: 1.2, color: TEXT_MUTED,
-                        textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
+                        textTransform: 'uppercase' as const, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                       }}>{label}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: col, fontFamily: 'ui-monospace, Consolas, monospace' }}>{val}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: col, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif' }}>{val}</span>
                     </div>
                     <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${val}%`, background: col, borderRadius: 2 }} />
@@ -419,7 +420,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
               }}>
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: ORANGE,
-                  textTransform: 'uppercase' as const, fontFamily: 'ui-monospace, Consolas, monospace',
+                  textTransform: 'uppercase' as const, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                 }}>⚠️ {t('tariff_alert')}</span>
                 {selectedScores.tariff_note && (
                   <span style={{ fontSize: 11, color: TEXT, lineHeight: 1.5 }}>{selectedScores.tariff_note}</span>
@@ -437,7 +438,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                 color: !onAnalyzeRoute ? AMBER : '#000',
                 border: `1px solid ${AMBER}`, borderRadius: 4,
                 fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-                fontFamily: 'ui-monospace, Consolas, monospace', textTransform: 'uppercase' as const,
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', textTransform: 'uppercase' as const,
                 cursor: !onAnalyzeRoute ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
               }}
             >
@@ -452,11 +453,11 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
             }}>◎</div>
             <div style={{
               fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
-              fontFamily: 'ui-monospace, Consolas, monospace', textAlign: 'center', textTransform: 'uppercase' as const,
+              fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', textAlign: 'center', textTransform: 'uppercase' as const,
             }}>
               Select a country<br />to view details
             </div>
-            <div style={{ fontSize: 9, color: BORDER, fontFamily: 'ui-monospace, Consolas, monospace', textAlign: 'center', lineHeight: 1.8 }}>
+            <div style={{ fontSize: 9, color: BORDER, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', textAlign: 'center', lineHeight: 1.8 }}>
               {countries.length} {direction === 'export' ? t('export_destinations') : t('import_origins')}<br />with EUDR risk scoring
             </div>
           </div>

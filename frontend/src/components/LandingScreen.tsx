@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
+import Logo from './ui/Logo';
+import { COLORS, FONT } from '../theme';
 
 export type Focus          = 'regulatory' | 'climate' | 'market' | 'composite';
 export type Horizon        = '30' | '90' | '365';
@@ -23,13 +25,6 @@ interface Props {
   initialDestination?: string;
   initialTradeDirection?: TradeDirection;
 }
-
-const AMBER      = '#D4900A';
-const BG         = '#0B1120';
-const SURFACE    = '#131C2E';
-const BORDER     = '#1E2D45';
-const TEXT       = '#F1F5F9';
-const TEXT_MUTED = '#7A90A8';
 
 const DESTINATIONS = [
   'European Union',
@@ -87,12 +82,12 @@ function RadioPill<T extends string>({
             onClick={() => onChange(opt.value)}
             style={{
               padding: '6px 16px',
-              fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
-              fontFamily: 'ui-monospace, Consolas, monospace',
-              background: active ? AMBER : 'transparent',
-              color: active ? '#000' : TEXT_MUTED,
-              border: `1px solid ${active ? AMBER : BORDER}`,
-              borderRadius: 4, cursor: 'pointer',
+              fontSize: 12, fontWeight: 700, letterSpacing: 0.4,
+              fontFamily: FONT,
+              background: active ? COLORS.amberBright : 'transparent',
+              color: active ? '#1A1204' : COLORS.textSecondary,
+              border: `1px solid ${active ? COLORS.amberBright : COLORS.line}`,
+              borderRadius: 20, cursor: 'pointer',
               transition: 'all 0.15s',
             }}
           >
@@ -105,16 +100,16 @@ function RadioPill<T extends string>({
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 10, fontWeight: 600,
-  letterSpacing: 1.5, color: TEXT_MUTED, marginBottom: 8,
-  textTransform: 'uppercase', fontFamily: 'ui-monospace, Consolas, monospace',
+  display: 'block', fontSize: 11, fontWeight: 700,
+  letterSpacing: 1.5, color: COLORS.textSecondary, marginBottom: 8,
+  textTransform: 'uppercase', fontFamily: FONT,
 };
 
 const selectStyle: React.CSSProperties = {
-  width: '100%', background: SURFACE, border: `1px solid ${BORDER}`,
-  borderRadius: 6, color: TEXT, fontSize: 14,
+  width: '100%', background: COLORS.panel, border: `1px solid ${COLORS.line}`,
+  borderRadius: 8, color: COLORS.textPrimary, fontSize: 14,
   padding: '10px 12px', outline: 'none',
-  boxSizing: 'border-box', cursor: 'pointer',
+  boxSizing: 'border-box', cursor: 'pointer', fontFamily: FONT,
 };
 
 export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, initialDestination, initialTradeDirection }: Props) {
@@ -141,10 +136,22 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
   }
 
   const nonEU = !isImport && ['Norway', 'Switzerland', 'United Kingdom'].includes(destination);
+  const pillLegPanel: React.CSSProperties = {
+    background: 'rgba(217,119,6,0.08)', border: `1px solid ${COLORS.amber}44`,
+    borderRadius: 8, color: COLORS.amberBright, fontSize: 13,
+    padding: '10px 12px', fontFamily: FONT, fontWeight: 600, letterSpacing: 0.3,
+  };
+  const legSelectStyle: React.CSSProperties = {
+    ...selectStyle,
+    color: COLORS.amberBright,
+    background: 'rgba(217,119,6,0.08)',
+    border: `1px solid ${COLORS.amber}44`,
+    fontWeight: 600, fontSize: 13,
+  };
 
   return (
     <div style={{
-      minHeight: '100vh', background: BG, color: TEXT,
+      minHeight: '100vh', color: COLORS.textPrimary,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: '40px 24px',
@@ -152,18 +159,10 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: 52 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 14 }}>
-          <span style={{
-            background: AMBER, color: '#000',
-            fontFamily: 'ui-monospace, Consolas, monospace',
-            fontWeight: 700, fontSize: 16, letterSpacing: 1,
-            padding: '8px 12px', borderRadius: 4,
-          }}>OS</span>
-          <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: 4, color: TEXT, fontFamily: 'system-ui, sans-serif' }}>
-            ORIGINSIGNAL
-          </span>
+          <Logo size="lg" stacked={false} />
           <LangToggle />
         </div>
-        <div style={{ fontSize: 11, letterSpacing: 2.5, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace' }}>
+        <div style={{ fontSize: 12, letterSpacing: 2, color: COLORS.textSecondary, fontFamily: FONT, textTransform: 'uppercase' as const }}>
           {t('subtitle')}
         </div>
       </div>
@@ -186,53 +185,21 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
           <div>
             <label style={labelStyle}>{isImport ? t('source_country_label') : t('origin_label')}</label>
             {isImport ? (
-              <select
-                value={importOrigin}
-                onChange={e => setImportOrigin(e.target.value)}
-                style={{
-                  ...selectStyle,
-                  color: AMBER,
-                  background: '#0A1628',
-                  border: `1px solid ${AMBER}44`,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
-                  fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
-                }}
-              >
+              <select value={importOrigin} onChange={e => setImportOrigin(e.target.value)} style={legSelectStyle}>
                 {importOriginOptions.map(o => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
             ) : (
-              <div style={{
-                background: '#0A1628', border: `1px solid ${AMBER}44`,
-                borderRadius: 6, color: AMBER, fontSize: 13,
-                padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
-                fontWeight: 600, letterSpacing: 0.5,
-              }}>⬡ Brazil</div>
+              <div style={pillLegPanel}>⬢ Brazil</div>
             )}
           </div>
           <div>
             <label style={labelStyle}>{t('destination_label')}</label>
             {isImport ? (
-              <div style={{
-                background: '#0A1628', border: `1px solid ${AMBER}44`,
-                borderRadius: 6, color: AMBER, fontSize: 13,
-                padding: '10px 12px', fontFamily: 'ui-monospace, Consolas, monospace',
-                fontWeight: 600, letterSpacing: 0.5,
-              }}>⬡ Brazil</div>
+              <div style={pillLegPanel}>⬢ Brazil</div>
             ) : (
-              <select
-                value={destination}
-                onChange={e => setDestination(e.target.value)}
-                style={{
-                  ...selectStyle,
-                  color: AMBER,
-                  background: '#0A1628',
-                  border: `1px solid ${AMBER}44`,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
-                  fontWeight: 600, fontSize: 13, letterSpacing: 0.5,
-                }}
-              >
+              <select value={destination} onChange={e => setDestination(e.target.value)} style={legSelectStyle}>
                 {destinationOptions.map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
@@ -244,12 +211,13 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
         {/* Non-EU notice */}
         {nonEU && (
           <div style={{
-            background: '#1A1400', border: '1px solid #D4900A44',
-            borderRadius: 6, padding: '10px 14px',
-            fontSize: 11, color: TEXT_MUTED, lineHeight: 1.6,
-            fontFamily: 'ui-monospace, Consolas, monospace',
+            background: 'rgba(217,119,6,0.08)', border: `1px solid ${COLORS.amber}44`,
+            borderRadius: 8, padding: '10px 14px',
+            fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.6,
+            fontFamily: FONT,
           }}>
-            ⚠ {destination} is outside the EU — EUDR does not apply directly.
+            <i className="fas fa-triangle-exclamation" style={{ color: COLORS.amberBright, marginRight: 6 }} />
+            {destination} is outside the EU — EUDR does not apply directly.
             Bilateral agreements and equivalent national legislation will be assessed.
           </div>
         )}
@@ -266,24 +234,24 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
                   type="button"
                   onClick={() => setTradeDirection(dir)}
                   style={{
-                    flex: 1, padding: '8px 16px',
-                    fontSize: 11, fontWeight: 700, letterSpacing: 1,
-                    fontFamily: 'ui-monospace, Consolas, monospace',
-                    background: active ? AMBER : 'transparent',
-                    color: active ? '#000' : TEXT_MUTED,
-                    border: `1px solid ${active ? AMBER : BORDER}`,
-                    borderRadius: 4, cursor: 'pointer',
+                    flex: 1, padding: '9px 16px',
+                    fontSize: 12, fontWeight: 700, letterSpacing: 0.8,
+                    fontFamily: FONT,
+                    background: active ? COLORS.amberBright : 'transparent',
+                    color: active ? '#1A1204' : COLORS.textSecondary,
+                    border: `1px solid ${active ? COLORS.amberBright : COLORS.line}`,
+                    borderRadius: 8, cursor: 'pointer',
                     transition: 'all 0.15s',
                     textTransform: 'uppercase' as const,
                   }}
                 >
-                  {active ? '● ' : '○ '}
+                  <i className={dir === 'export' ? 'fas fa-arrow-up-from-bracket' : 'fas fa-arrow-down-to-bracket'} style={{ marginRight: 7, fontSize: 10 }} />
                   {dir === 'export' ? 'Export' : 'Import'}
                 </button>
               );
             })}
           </div>
-          <div style={{ marginTop: 6, fontSize: 10, color: TEXT_MUTED, fontFamily: 'ui-monospace, Consolas, monospace', lineHeight: 1.6 }}>
+          <div style={{ marginTop: 6, fontSize: 11.5, color: COLORS.textSecondary, fontFamily: FONT, lineHeight: 1.6 }}>
             {tradeDirection === 'export'
               ? 'Brazilian exporter assessing risk of shipping to Europe'
               : 'Brazilian importer assessing supply risk and regulatory requirements'}
@@ -306,7 +274,7 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
         <div>
           <label style={{ ...labelStyle, display: 'flex', gap: 6, alignItems: 'center' }}>
             {t('query_label')}
-            <span style={{ color: BORDER, fontWeight: 400, fontSize: 9, letterSpacing: 1 }}>(OPTIONAL)</span>
+            <span style={{ color: COLORS.textSecondary, fontWeight: 400, fontSize: 9.5, letterSpacing: 1, opacity: 0.7 }}>(OPTIONAL)</span>
           </label>
           <textarea
             value={query}
@@ -314,11 +282,11 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
             placeholder={t('query_placeholder')}
             rows={3}
             style={{
-              width: '100%', background: SURFACE, border: `1px solid ${BORDER}`,
-              borderRadius: 6, color: TEXT, fontSize: 14,
+              width: '100%', background: COLORS.panel, border: `1px solid ${COLORS.line}`,
+              borderRadius: 8, color: COLORS.textPrimary, fontSize: 14,
               padding: '10px 12px', resize: 'vertical' as const,
               outline: 'none', boxSizing: 'border-box' as const,
-              fontFamily: 'system-ui, sans-serif', lineHeight: 1.5,
+              fontFamily: FONT, lineHeight: 1.5,
             }}
           />
         </div>
@@ -328,13 +296,15 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
           type="submit"
           style={{
             width: '100%', height: 52,
-            background: AMBER, color: '#000',
-            fontWeight: 700, fontSize: 13, letterSpacing: 2.5,
-            fontFamily: 'ui-monospace, Consolas, monospace',
-            border: 'none', borderRadius: 6, cursor: 'pointer',
+            background: COLORS.amberBright, color: '#1A1204',
+            fontWeight: 700, fontSize: 13, letterSpacing: 1.5,
+            fontFamily: FONT,
+            border: 'none', borderRadius: 8, cursor: 'pointer',
             textTransform: 'uppercase' as const,
+            boxShadow: '0 6px 20px -6px rgba(245,158,11,0.5)',
           }}
         >
+          <i className="fas fa-compass" style={{ marginRight: 8 }} />
           {t('analyze_btn')}
         </button>
 
@@ -343,8 +313,8 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
           onClick={onCompare}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 11, color: TEXT_MUTED, letterSpacing: 0.5,
-            fontFamily: 'ui-monospace, Consolas, monospace',
+            fontSize: 12, color: COLORS.textSecondary, letterSpacing: 0.3,
+            fontFamily: FONT,
             textAlign: 'center' as const, padding: 0,
           }}
         >
@@ -354,9 +324,9 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
 
       {/* Footer */}
       <div style={{
-        marginTop: 48, fontSize: 10, color: '#334155',
-        fontFamily: 'ui-monospace, Consolas, monospace',
-        letterSpacing: 0.5, textAlign: 'center', lineHeight: 1.8,
+        marginTop: 48, fontSize: 11, color: COLORS.textSecondary,
+        fontFamily: FONT, opacity: 0.7,
+        letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.8,
       }}>
         Powered by Claude Sonnet 4.6 · Open-Meteo · USDA FAS · EUR-Lex EUDR
       </div>

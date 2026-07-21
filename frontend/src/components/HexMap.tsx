@@ -3,6 +3,7 @@ import { getRiskLevel } from '../types';
 import type { PropagationData } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
+import { COLORS } from '../theme';
 
 type Layer = 'regulatory' | 'climate' | 'market' | 'composite' | 'propagation';
 type TradeDirection = 'export' | 'import';
@@ -97,25 +98,25 @@ const COUNTRY_KEY: Record<string, TranslationKey> = {
 const HEX_R = 48;
 const SIDEBAR_W = 280;
 
-const AMBER      = '#D4900A';
-const ORANGE     = '#FB923C';
-const BG         = '#0B1120';
-const SIDEBAR_BG = '#0F1A2E';
-const BORDER_CSS = 'rgba(255,255,255,0.06)';
-const BORDER     = '#1E2D45';
-const TEXT       = '#F1F5F9';
-const TEXT_MUTED = '#7A90A8';
+const AMBER      = COLORS.amberBright;
+const ORANGE     = COLORS.bronze;
+const BG         = COLORS.bg;
+const SIDEBAR_BG = COLORS.panelSoft;
+const BORDER_CSS = COLORS.line;
+const BORDER     = '#26364F';
+const TEXT       = COLORS.textPrimary;
+const TEXT_MUTED = COLORS.textSecondary;
 
 const RISK_COLORS: Record<string, { bg: string; text: string }> = {
-  LOW:    { bg: '#0D3321', text: '#34D399' },
-  MEDIUM: { bg: '#2D1F00', text: '#FBBF24' },
-  HIGH:   { bg: '#2D0D0D', text: '#F87171' },
+  LOW:    { bg: 'rgba(15,118,110,0.16)',  text: COLORS.petroleo },
+  MEDIUM: { bg: 'rgba(245,158,11,0.16)',  text: COLORS.amberBright },
+  HIGH:   { bg: 'rgba(220,38,38,0.16)',   text: COLORS.danger },
 };
 
 const LEGEND_ITEMS = [
-  { color: '#34D399', label: 'LOW',    range: '< 30'  },
-  { color: '#FBBF24', label: 'MEDIUM', range: '30–69' },
-  { color: '#F87171', label: 'HIGH',   range: '≥ 70'  },
+  { color: COLORS.petroleo,    label: 'LOW',    range: '< 30'  },
+  { color: COLORS.amberBright, label: 'MEDIUM', range: '30–69' },
+  { color: COLORS.danger,      label: 'HIGH',   range: '≥ 70'  },
 ];
 
 function getLayerScore(scores: RegionScores, layer: Layer): number {
@@ -129,9 +130,9 @@ function getLayerScore(scores: RegionScores, layer: Layer): number {
 }
 
 function getColor(score: number): string {
-  if (score >= 70) return '#F87171';
-  if (score >= 40) return '#FBBF24';
-  return '#34D399';
+  if (score >= 70) return COLORS.danger;
+  if (score >= 40) return COLORS.amberBright;
+  return COLORS.petroleo;
 }
 
 function hexCenterAt(col: number, row: number, r: number, ox: number, oy: number): [number, number] {
@@ -197,9 +198,9 @@ function wrapText(name: string): [string, string] {
 }
 
 function getVerdict(composite: number): { label: string; color: string } {
-  if (composite < 40) return { label: 'GO',      color: '#34D399' };
-  if (composite < 70) return { label: 'CAUTION', color: '#FBBF24' };
-  return                      { label: 'HOLD',    color: '#F87171' };
+  if (composite < 40) return { label: 'GO',      color: COLORS.petroleo };
+  if (composite < 70) return { label: 'CAUTION', color: COLORS.amberBright };
+  return                      { label: 'HOLD',    color: COLORS.danger };
 }
 
 export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'export', propagationData }: Props) {
@@ -311,14 +312,14 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
         : region.name;
       const [line1, line2] = wrapText(displayName);
       ctx.fillStyle    = 'rgba(255,255,255,0.92)';
-      ctx.font         = 'bold 10px ui-monospace, Consolas, monospace';
+      ctx.font         = 'bold 10px Manrope, "IBM Plex Sans", sans-serif';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
 
       if (region.flag) {
         ctx.font = '13px sans-serif';
         ctx.fillText(region.flag, cx, cy - (line2 ? 26 : 20));
-        ctx.font = 'bold 10px ui-monospace, Consolas, monospace';
+        ctx.font = 'bold 10px Manrope, "IBM Plex Sans", sans-serif';
       }
 
       if (line2) {
@@ -328,7 +329,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
         ctx.fillText(line1.toUpperCase(), cx, cy - 8);
       }
 
-      ctx.font      = 'bold 16px ui-monospace, Consolas, monospace';
+      ctx.font      = 'bold 16px Manrope, "IBM Plex Sans", sans-serif';
       ctx.fillStyle = '#000000AA';
       ctx.fillText(String(score), cx + 1, cy + 16);
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -473,7 +474,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
               onClick={() => setLayer(l)}
               style={{
                 padding: '5px 12px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
-                fontFamily: 'ui-monospace, Consolas, monospace',
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                 border: `1px solid ${layer === l ? AMBER : 'rgba(255,255,255,0.12)'}`,
                 borderRadius: 4,
                 background: layer === l ? AMBER : 'rgba(11,17,32,0.82)',
@@ -505,7 +506,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
               }} />
               <span style={{
                 fontSize: 9, color: TEXT_MUTED,
-                fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5,
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', letterSpacing: 0.5,
               }}>{label} {range}</span>
             </div>
           ))}
@@ -534,18 +535,18 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: TEXT_MUTED,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                   textTransform: 'uppercase' as const,
                 }}>{t('selected_cell')}</span>
                 <span style={{
                   fontSize: 13, fontWeight: 700, letterSpacing: 0.8, color: TEXT,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                   textTransform: 'uppercase' as const, lineHeight: 1.4,
                 }}>{selected.name}</span>
                 {isSelectedLive && (
                   <span style={{
                     fontSize: 9, color: AMBER,
-                    fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.5,
+                    fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', letterSpacing: 0.5,
                   }}>● Live</span>
                 )}
               </div>
@@ -564,23 +565,23 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
                 <div style={{
                   fontSize: 9, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
                   textTransform: 'uppercase' as const,
-                  fontFamily: 'ui-monospace, Consolas, monospace', marginBottom: 2,
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', marginBottom: 2,
                 }}>{isImport ? 'SUPPLY RELIABILITY' : t('export_readiness')}</div>
                 <div style={{
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                   fontSize: 40, fontWeight: 700, color: AMBER, lineHeight: 1,
                 }}>{exportReadiness}</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
                 <span style={{
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                   fontWeight: 700, fontSize: 9, letterSpacing: 1,
                   padding: '2px 8px', borderRadius: 3, alignSelf: 'flex-start',
                   background: RISK_COLORS[riskLevel].bg, color: RISK_COLORS[riskLevel].text,
                 }}>{riskLevel}</span>
                 {isSelectedLive && (
                   <span style={{
-                    fontFamily: 'ui-monospace, Consolas, monospace',
+                    fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                     fontWeight: 700, fontSize: 9, letterSpacing: 1,
                     padding: '2px 8px', borderRadius: 3, alignSelf: 'flex-start',
                     color: verdict.color, border: `1px solid ${verdict.color}55`,
@@ -600,11 +601,11 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
                       <span style={{
                         fontSize: 9, fontWeight: 600, letterSpacing: 1.2, color: TEXT_MUTED,
                         textTransform: 'uppercase' as const,
-                        fontFamily: 'ui-monospace, Consolas, monospace',
+                        fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                       }}>{label}</span>
                       <span style={{
                         fontSize: 11, fontWeight: 700, color: col,
-                        fontFamily: 'ui-monospace, Consolas, monospace',
+                        fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                       }}>{val}</span>
                     </div>
                     <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
@@ -625,7 +626,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: ORANGE,
                   textTransform: 'uppercase' as const,
-                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                 }}>⤳ PROPAGATION ALERT</span>
                 <span style={{ fontSize: 11, color: TEXT, lineHeight: 1.5 }}>
                   {t('propagated_from')}: {propagationData.region_scores[selected.name]!.risk_sources.join(', ')}
@@ -637,7 +638,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
             {isSelectedLive && (
               <div style={{
                 fontSize: 9, color: AMBER,
-                fontFamily: 'ui-monospace, Consolas, monospace', letterSpacing: 0.3,
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', letterSpacing: 0.3,
                 borderTop: `1px solid ${BORDER_CSS}`, paddingTop: 10,
               }}>
                 {t('live_data')}
@@ -659,7 +660,7 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: '0.1em',
-                fontFamily: 'ui-monospace, Consolas, monospace',
+                fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
                 textTransform: 'uppercase' as const,
                 cursor: (analyzingRegion || !onAnalyzeRegion) ? 'not-allowed' : 'pointer',
                 transition: 'all 0.15s',
@@ -682,13 +683,13 @@ export default function HexMap({ onAnalyzeRegion, commodity, tradeDirection = 'e
             }}>⬡</div>
             <div style={{
               fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: TEXT_MUTED,
-              fontFamily: 'ui-monospace, Consolas, monospace', textAlign: 'center',
+              fontFamily: 'Manrope, "IBM Plex Sans", sans-serif', textAlign: 'center',
               textTransform: 'uppercase' as const,
             }}>
               Select a region<br />to view details
             </div>
             <div style={{
-              fontSize: 9, color: BORDER, fontFamily: 'ui-monospace, Consolas, monospace',
+              fontSize: 9, color: BORDER, fontFamily: 'Manrope, "IBM Plex Sans", sans-serif',
               textAlign: 'center', lineHeight: 1.8,
             }}>
               {isImport
