@@ -41,7 +41,7 @@ originsignal/
 │   │   ├── eudr_docs/                # Place EUDR PDF here
 │   │   ├── antaq_docs/
 │   │   ├── market_reports/
-│   │   └── chroma_db/                # Auto-generated vector index
+│   │   └── chroma_db/                # Auto-generated vector index (gitignored)
 │   └── pyproject.toml
 ├── frontend/
 │   └── src/
@@ -70,11 +70,13 @@ ANTHROPIC_API_KEY=your_key_here
 
 ### 2. Index EUDR documents
 
+`backend/data/chroma_db/` is gitignored (generated data, not committed) — **after cloning, this step is required** before the regulatory agent has anything to search.
+
 Place `EUDR_2023_1115.pdf` in `backend/data/eudr_docs/`, then:
 
 ```bash
 cd backend
-python3 -m app.rag.ingest
+python -m app.rag.ingest
 ```
 
 Run with `--force` to reindex.
