@@ -17,6 +17,17 @@ const ENGINE_STEPS = [
 const TOTAL_MS   = 4000;
 const ENGINE_GAP = 600;
 
+const STATUS_MESSAGES = [
+  { at: 0,    en: "Connecting to intelligence sources...",     pt: "Conectando às fontes de inteligência..." },
+  { at: 600,  en: "Fetching real-time climate data...",        pt: "Buscando dados climáticos em tempo real..." },
+  { at: 1200, en: "Scanning EUDR regulatory database...",      pt: "Verificando base regulatória EUDR..." },
+  { at: 1800, en: "Analyzing global market signals...",        pt: "Analisando sinais de mercado global..." },
+  { at: 2400, en: "Calculating logistics risk...",             pt: "Calculando risco logístico..." },
+  { at: 3000, en: "Running Honeycomb algorithms...",           pt: "Executando algoritmos Honeycomb..." },
+  { at: 3600, en: "Synthesizing executive intelligence...",    pt: "Sintetizando inteligência executiva..." },
+  { at: 4200, en: "Your analysis will be ready in moments.",   pt: "Sua análise estará disponível em instantes." },
+];
+
 interface Props {
   result: AnalyzeResponse | null;
   error: string | null;
@@ -28,8 +39,9 @@ export default function ProcessingScreen({ result, error, onComplete, onRetry }:
   const [engineCount, setEngineCount] = useState(0);
   const [progress,    setProgress]    = useState(0);
   const [animDone,    setAnimDone]    = useState(false);
+  const [statusIndex, setStatusIndex] = useState(0);
   const calledComplete                = useRef(false);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     const step = 100 / (TOTAL_MS / 40);
@@ -45,11 +57,16 @@ export default function ProcessingScreen({ result, error, onComplete, onRetry }:
       setTimeout(() => setEngineCount(c => Math.min(c + 1, ENGINE_STEPS.length)), (i + 1) * ENGINE_GAP)
     );
 
+    const statusTimers = STATUS_MESSAGES.map((msg, i) =>
+      setTimeout(() => setStatusIndex(i), msg.at)
+    );
+
     const completionTimer = setTimeout(() => setAnimDone(true), TOTAL_MS);
 
     return () => {
       clearInterval(progressInterval);
       timers.forEach(clearTimeout);
+      statusTimers.forEach(clearTimeout);
       clearTimeout(completionTimer);
     };
   }, []);
@@ -77,10 +94,28 @@ export default function ProcessingScreen({ result, error, onComplete, onRetry }:
         <div style={{
           fontSize: 12, fontWeight: 600, letterSpacing: 2,
           color: COLORS.textSecondary, fontFamily: FONT,
-          marginBottom: 24, textTransform: 'uppercase' as const, textAlign: 'center' as const,
+          marginBottom: 8, textTransform: 'uppercase' as const, textAlign: 'center' as const,
         }}>
           {t('initializing')}
         </div>
+
+        {/* Status message */}
+        <div
+          key={statusIndex}
+          style={{
+            fontSize: 11, color: COLORS.amberBright, fontFamily: FONT,
+            marginBottom: 24, textAlign: 'center' as const,
+            animation: 'os-status-fade 300ms ease',
+          }}
+        >
+          {language === 'PT' ? STATUS_MESSAGES[statusIndex].pt : STATUS_MESSAGES[statusIndex].en}
+        </div>
+        <style>{`
+          @keyframes os-status-fade {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+          }
+        `}</style>
 
         {/* Pipeline strip */}
         <div style={{ marginBottom: 40 }}>
