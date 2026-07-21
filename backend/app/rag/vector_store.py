@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import chromadb
@@ -30,7 +31,8 @@ class EUDRVectorStore:
     def index_documents(self, chunks: list[dict]) -> None:
         ids, documents, metadatas = [], [], []
         for i, chunk in enumerate(chunks):
-            doc_id = f"eudr_{i:05d}"
+            file_prefix = os.path.splitext(os.path.basename(chunk.get('source', 'doc')))[0].lower().replace(" ", "_")
+            doc_id = f"{file_prefix}_{i:05d}"
             ids.append(doc_id)
             documents.append(chunk['text'])
             metadatas.append({
