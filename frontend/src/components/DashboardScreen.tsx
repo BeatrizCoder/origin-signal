@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { AnalyzeResponse, TariffCalculation, AgentObservability } from '../types';
 import { getRiskLevel } from '../types';
 import HexMap from './HexMap';
@@ -13,6 +13,7 @@ import PillChip from './ui/PillChip';
 import ProgressMeter from './ui/ProgressMeter';
 import BriefingBlock from './ui/BriefingBlock';
 import PipelineStrip from './ui/PipelineStrip';
+import RevealSection from './ui/RevealSection';
 import { COLORS, FONT, riskColor } from '../theme';
 
 type Tab = 'analysis' | 'map' | 'global' | 'ai';
@@ -161,16 +162,9 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const [activeTab,   setActiveTab]   = useState<Tab>('analysis');
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const [pipelineActive, setPipelineActive] = useState(0);
+  const [revealedSections, setRevealedSections] = useState<Set<string>>(new Set());
   const { t } = useLanguage();
   const isImport = tradeDirection === 'import';
-
-  useEffect(() => {
-    setPipelineActive(0);
-    const timers = PIPELINE_STEPS.map((_, i) =>
-      setTimeout(() => setPipelineActive(c => Math.max(c, i + 1)), (i + 1) * 120)
-    );
-    return () => timers.forEach(clearTimeout);
-  }, [result]);
 
   async function handleExport(format: 'pdf' | 'excel') {
     setDownloading(format);
@@ -237,6 +231,34 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
   const riskBadge = riskLevel === 'HIGH' ? t('high') : riskLevel === 'MEDIUM' ? t('medium') : t('low');
   const verdictLabel = verdict === 'Go' ? t('go') : verdict === 'Hold' ? t('hold') : t('caution');
+
+  const sectionOrder = useMemo(() => {
+    const order: string[] = ['hero', 'metrics'];
+    if (exec?.key_risks && exec.key_risks.length > 0) order.push('priorities');
+    if (result.honeycomb) order.push('hes');
+    if (result.propagation) order.push('propagation');
+    order.push('traderoute');
+    if (isImport && result.tariff && result.tariff.ncm_code) order.push('tariff');
+    order.push('memo');
+    return order;
+  }, [result, exec, isImport]);
+
+  useEffect(() => {
+    setPipelineActive(0);
+    setRevealedSections(new Set());
+
+    const pipelineTimers = PIPELINE_STEPS.map((_, i) =>
+      setTimeout(() => setPipelineActive(c => Math.max(c, i + 1)), (i + 1) * 120)
+    );
+    const sectionTimers = sectionOrder.map((id, i) =>
+      setTimeout(() => setRevealedSections(prev => new Set(prev).add(id)), (i + 1) * 120)
+    );
+
+    return () => {
+      pipelineTimers.forEach(clearTimeout);
+      sectionTimers.forEach(clearTimeout);
+    };
+  }, [result, sectionOrder]);
 
   const decisionTraceInputs = [
     { label: t('regulatory'), value: clamp(result.regulatory?.risk_score ?? 0) },
@@ -484,79 +506,85 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, width: '100%', maxWidth: 1000, margin: '0 auto' }}>
 
               {/* ── Hero ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 50, alignItems: 'center', padding: '12px 0 28px' }}>
-                <div>
-                  <div style={{ fontSize: 12, color: COLORS.textSecondary, letterSpacing: 2, textTransform: 'uppercase' as const, marginBottom: 8, fontFamily: FONT }}>
-                    {isImport ? 'Supply Risk' : 'Trade Risk'}
+              <RevealSection visible={revealedSections.has('hero')}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 50, alignItems: 'center', padding: '12px 0 28px' }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: COLORS.textSecondary, letterSpacing: 2, textTransform: 'uppercase' as const, marginBottom: 8, fontFamily: FONT }}>
+                      {isImport ? 'Supply Risk' : 'Trade Risk'}
+                    </div>
+                    <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1, letterSpacing: -2.5, color: COLORS.amberBright, fontFamily: FONT }}>{score}</div>
+                    <div style={{ marginTop: 10 }}>
+                      <PillChip color={RISK_BADGE_COLOR[riskLevel]}>{riskBadge}</PillChip>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1, letterSpacing: -2.5, color: COLORS.amberBright, fontFamily: FONT }}>{score}</div>
-                  <div style={{ marginTop: 10 }}>
-                    <PillChip color={RISK_BADGE_COLOR[riskLevel]}>{riskBadge}</PillChip>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <SignalRow {...marketSignal} />
+                    <SignalRow {...climateSignal} />
+                    <SignalRow {...gapSignal} />
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <SignalRow {...marketSignal} />
-                  <SignalRow {...climateSignal} />
-                  <SignalRow {...gapSignal} />
-                </div>
-              </div>
+              </RevealSection>
 
               <HexDivider />
 
               {/* ── 3 Metric cards ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, padding: '28px 0' }}>
-                <MetricCard
-                  label={isImport ? 'SUPPLY RELIABILITY' : t('export_readiness')}
-                  value={String(isImport ? (result.supply_reliability ?? readiness) : readiness)}
-                  unit="/100"
-                  color={goodColor(readiness)}
-                  sub={isImport ? 'Buyer reliability score' : `Risk score: ${score}/100`}
-                />
-                <MetricCard
-                  label={t('market_risk')}
-                  value={String(marketScore)}
-                  unit="/100"
-                  color={riskColor(marketScore)}
-                  sub={result.market?.price_trend ?? 'Stable'}
-                />
-                <MetricCard
-                  label={t('gps_coverage')}
-                  value={String(gpsPct)}
-                  unit="%"
-                  color={gpsPct >= 100 ? COLORS.petroleo : COLORS.danger}
-                  sub={gpsPct >= 100 ? 'All suppliers mapped' : 'Incomplete traceability'}
-                />
-              </div>
+              <RevealSection visible={revealedSections.has('metrics')}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, padding: '28px 0' }}>
+                  <MetricCard
+                    label={isImport ? 'SUPPLY RELIABILITY' : t('export_readiness')}
+                    value={String(isImport ? (result.supply_reliability ?? readiness) : readiness)}
+                    unit="/100"
+                    color={goodColor(readiness)}
+                    sub={isImport ? 'Buyer reliability score' : `Risk score: ${score}/100`}
+                  />
+                  <MetricCard
+                    label={t('market_risk')}
+                    value={String(marketScore)}
+                    unit="/100"
+                    color={riskColor(marketScore)}
+                    sub={result.market?.price_trend ?? 'Stable'}
+                  />
+                  <MetricCard
+                    label={t('gps_coverage')}
+                    value={String(gpsPct)}
+                    unit="%"
+                    color={gpsPct >= 100 ? COLORS.petroleo : COLORS.danger}
+                    sub={gpsPct >= 100 ? 'All suppliers mapped' : 'Incomplete traceability'}
+                  />
+                </div>
+              </RevealSection>
 
               <HexDivider />
 
               {/* ── Risk Priorities ── */}
               {exec?.key_risks && exec.key_risks.length > 0 && (
                 <>
-                  <div style={{ padding: '28px 0' }}>
-                    <Eyebrow>Risk Priorities</Eyebrow>
-                    <h2 style={{ margin: '0 0 20px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Where to act first</h2>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {exec.key_risks.slice(0, 3).map((risk, i) => (
-                        <div key={i} style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          padding: '18px 0', borderBottom: i < Math.min(exec!.key_risks.length, 3) - 1 ? `1px solid ${COLORS.line}` : 'none',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                            <span style={{ fontSize: 12, color: COLORS.textSecondary, width: 20, fontFamily: FONT }}>{String(i + 1).padStart(2, '0')}</span>
-                            <div>
-                              <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.textPrimary, fontFamily: FONT }}>{risk.title}</div>
-                              <div style={{ fontSize: 12.5, color: COLORS.textSecondary, marginTop: 2, fontFamily: FONT }}>{risk.description}</div>
+                  <RevealSection visible={revealedSections.has('priorities')}>
+                    <div style={{ padding: '28px 0' }}>
+                      <Eyebrow>Risk Priorities</Eyebrow>
+                      <h2 style={{ margin: '0 0 20px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Where to act first</h2>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {exec.key_risks.slice(0, 3).map((risk, i) => (
+                          <div key={i} style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '18px 0', borderBottom: i < Math.min(exec!.key_risks.length, 3) - 1 ? `1px solid ${COLORS.line}` : 'none',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                              <span style={{ fontSize: 12, color: COLORS.textSecondary, width: 20, fontFamily: FONT }}>{String(i + 1).padStart(2, '0')}</span>
+                              <div>
+                                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.textPrimary, fontFamily: FONT }}>{risk.title}</div>
+                                <div style={{ fontSize: 12.5, color: COLORS.textSecondary, marginTop: 2, fontFamily: FONT }}>{risk.description}</div>
+                              </div>
                             </div>
+                            <span style={{
+                              fontSize: 12, fontWeight: 800, letterSpacing: 1, color: SEV_COLORS[risk.severity] ?? COLORS.textSecondary,
+                              fontFamily: FONT, textTransform: 'uppercase' as const, flexShrink: 0, marginLeft: 12,
+                            }}>{risk.severity}</span>
                           </div>
-                          <span style={{
-                            fontSize: 12, fontWeight: 800, letterSpacing: 1, color: SEV_COLORS[risk.severity] ?? COLORS.textSecondary,
-                            fontFamily: FONT, textTransform: 'uppercase' as const, flexShrink: 0, marginLeft: 12,
-                          }}>{risk.severity}</span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </RevealSection>
                   <HexDivider />
                 </>
               )}
@@ -573,6 +601,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
                 return (
                   <>
+                  <RevealSection visible={revealedSections.has('hes')}>
                     <div style={{ padding: '28px 0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <Eyebrow>⬢ {t('hes_title')}</Eyebrow>
@@ -643,6 +672,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                         <span>{hc.insight}</span>
                       </div>
                     </div>
+                  </RevealSection>
                     <HexDivider />
                   </>
                 );
@@ -656,6 +686,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
                 return (
                   <>
+                  <RevealSection visible={revealedSections.has('propagation')}>
                     <div style={{ padding: '28px 0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <Eyebrow>Cellular Risk Propagation</Eyebrow>
@@ -699,12 +730,14 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                         <div style={{ fontSize: 13, color: COLORS.textSecondary, fontFamily: FONT }}>Adjacent cells show stable risk patterns</div>
                       )}
                     </div>
+                  </RevealSection>
                     <HexDivider />
                   </>
                 );
               })()}
 
               {/* ── Trade Route ── */}
+              <RevealSection visible={revealedSections.has('traderoute')}>
               <div style={{ padding: '28px 0' }}>
                 <Eyebrow>{t('trade_route')}</Eyebrow>
                 <div style={{ ...CARD, marginTop: 16 }}>
@@ -752,11 +785,13 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   </div>
                 </div>
               </div>
+              </RevealSection>
 
               {/* ── Tariff Calculation ── */}
               {isImport && result.tariff && result.tariff.ncm_code && (
                 <>
                   <HexDivider />
+                  <RevealSection visible={revealedSections.has('tariff')}>
                   <div style={{ padding: '28px 0' }}>
                     <Eyebrow>{t('tariff_calculation')}</Eyebrow>
                     <div style={{ ...CARD, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -810,12 +845,14 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                       })()}
                     </div>
                   </div>
+                  </RevealSection>
                 </>
               )}
 
               <HexDivider />
 
               {/* ── Executive Memorandum — no colored boxes ── */}
+              <RevealSection visible={revealedSections.has('memo')}>
               <div style={{ padding: '28px 0 40px' }}>
                 <Eyebrow>⬢ {t('executive_briefing')}</Eyebrow>
                 <h2 style={{ margin: '0 0 8px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Executive Memorandum</h2>
@@ -840,6 +877,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   <BriefingBlock title="Trade Window" last>{exec.trade_window}</BriefingBlock>
                 )}
               </div>
+              </RevealSection>
             </div>
           )}
 
