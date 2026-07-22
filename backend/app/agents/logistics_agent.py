@@ -25,6 +25,10 @@ _SEA_DAYS: dict[str, int] = {
     "Veracruz":     14,
     "Jeddah":       28,
     "Jebel Ali":    26,
+    "Port of Montevideo":  3,
+    "Port of Asunción":    3,
+    "Port of Callao":     12,
+    "Port of Valparaíso":  6,
 }
 
 DESTINATION_PORTS: dict[str, dict] = {
@@ -47,6 +51,10 @@ DESTINATION_PORTS: dict[str, dict] = {
     "Mexico":         {"name": "Veracruz",     "dhl_index": 50, "handling_days": 3},
     "Saudi Arabia":   {"name": "Jeddah",       "dhl_index": 48, "handling_days": 4},
     "UAE":            {"name": "Jebel Ali",    "dhl_index": 42, "handling_days": 3},
+    "Uruguay":        {"name": "Port of Montevideo",  "dhl_index": 40, "handling_days": 2},
+    "Paraguay":       {"name": "Port of Asunción",    "dhl_index": 44, "handling_days": 3},
+    "Peru":           {"name": "Port of Callao",      "dhl_index": 50, "handling_days": 3},
+    "Chile":          {"name": "Port of Valparaíso",  "dhl_index": 44, "handling_days": 2},
 }
 
 _DEST_HANDLING_DAYS = 3
