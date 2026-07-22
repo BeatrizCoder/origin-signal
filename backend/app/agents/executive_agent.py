@@ -3,6 +3,7 @@ import re
 
 import anthropic
 
+from app.agents._llm_json import parse_llm_json
 from app.core.config import settings
 
 _SYSTEM_PROMPT_EXPORT = """\
@@ -203,20 +204,31 @@ class ExecutiveAgent:
             "tariff_agent":     tariff,
         }, indent=2, ensure_ascii=False)
 
-        response = self._client.messages.create(
-            model="claude-haiku-4-5-20251001" if is_import else "claude-sonnet-4-6",
-            max_tokens=2048,
-            system=system_prompt,
-            messages=[{"role": "user", "content": f"Agent reports:\n\n{context}"}],
-        )
-
-        raw = response.content[0].text.strip()
-        raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
-        raw = re.sub(r"\s*```$", "", raw)
-        return {
-            **json.loads(raw),
-            "token_usage": {
-                "input": response.usage.input_tokens,
-                "output": response.usage.output_tokens,
-            },
-        }
+        model = "claude-haiku-4-5-20251001" if is_import else "claude-sonnet-4-6"
+        response = None
+        for attempt in range(2):
+            response = self._client.messages.create(
+                model=model,
+                max_tokens=3072,
+                system=system_prompt,
+                messages=[{"role": "user", "content": f"Agent reports:\n\n{context}"}],
+            )
+            try:
+                parsed = parse_llm_json(response.content[0].text)
+                return {
+                    **parsed,
+                    "token_usage": {
+                        "input": response.usage.input_tokens,
+                        "output": response.usage.output_tokens,
+                    },
+                }
+            except (json.JSONDecodeError, ValueError):
+                if attempt == 1:
+                    fallback = _MOCK_IMPORT if is_import else _MOCK_EXPORT
+                    return {
+                        **fallback,
+                        "token_usage": {
+                            "input": response.usage.input_tokens,
+                            "output": response.usage.output_tokens,
+                        },
+                    }

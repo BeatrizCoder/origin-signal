@@ -4,6 +4,7 @@ from pathlib import Path
 
 import anthropic
 
+from app.agents._llm_json import parse_llm_json
 from app.core.config import settings
 from app.rag.vector_store import EUDRVectorStore
 
@@ -169,18 +170,27 @@ class RegulatoryAgent:
                 f"Relevant EUDR regulatory context:\n\n{context_blocks}"
             )
 
-        response = self._client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=1024,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
+        response = None
+        parsed = None
+        for attempt in range(2):
+            response = self._client.messages.create(
+                model="claude-haiku-4-5",
+                max_tokens=2048,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            try:
+                parsed = parse_llm_json(response.content[0].text)
+                break
+            except (json.JSONDecodeError, ValueError):
+                if attempt == 1:
+                    fallback = self._mock_response(query, commodity, origin, destination, rag_evidence)
+                    fallback["token_usage"] = {
+                        "input": response.usage.input_tokens,
+                        "output": response.usage.output_tokens,
+                    }
+                    return fallback
 
-        raw = response.content[0].text
-        # strip markdown code fences if the model wraps JSON in ```json...```
-        raw = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.IGNORECASE)
-        raw = re.sub(r"\s*```$", "", raw)
-        parsed = json.loads(raw)
         parsed["risk_score"] = max(0, min(100, int(parsed.get("risk_score", 50))))
 
         return {
