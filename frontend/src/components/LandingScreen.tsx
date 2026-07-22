@@ -28,27 +28,39 @@ interface Props {
 
 const DESTINATIONS = [
   'European Union',
-  'Germany',
-  'Netherlands',
-  'France',
   'Norway',
   'Switzerland',
   'United Kingdom',
-];
-
-const IMPORT_ORIGINS = [
   'United States',
   'China',
-  'European Union',
-  'Germany',
-  'Netherlands',
-  'France',
+  'Japan',
+  'South Korea',
   'Argentina',
   'Uruguay',
   'Paraguay',
   'Colombia',
   'Peru',
   'Chile',
+  'Mexico',
+  'Saudi Arabia',
+  'UAE',
+];
+
+const IMPORT_ORIGINS = [
+  'United States',
+  'China',
+  'European Union',
+  'Norway',
+  'Switzerland',
+  'United Kingdom',
+  'Argentina',
+  'Colombia',
+  'Peru',
+  'Chile',
+  'Uruguay',
+  'Paraguay',
+  'Vietnam',
+  'Ethiopia',
 ];
 
 const FOCUS_OPTIONS: { value: Focus; label: string }[] = [

@@ -15,18 +15,38 @@ _SEA_DAYS: dict[str, int] = {
     "Oslo":         29,
     "Felixstowe":   23,
     "Zurich":       25,
+    "Valencia":     20,
+    "Miami":        11,
+    "Yokohama":     38,
+    "Shanghai":     35,
+    "Busan":        37,
+    "Buenos Aires":  4,
+    "Cartagena":    10,
+    "Veracruz":     14,
+    "Jeddah":       28,
+    "Jebel Ali":    26,
 }
 
 DESTINATION_PORTS: dict[str, dict] = {
-    "Germany":        {"name": "Hamburg",    "dhl_index": 62, "handling_days": 3},
-    "European Union": {"name": "Hamburg",    "dhl_index": 62, "handling_days": 3},
-    "Netherlands":    {"name": "Rotterdam",  "dhl_index": 45, "handling_days": 3},
-    "Belgium":        {"name": "Antuérpia",  "dhl_index": 48, "handling_days": 3},
-    "France":         {"name": "Le Havre",   "dhl_index": 52, "handling_days": 3},
-    "Italy":          {"name": "Genoa",      "dhl_index": 58, "handling_days": 3},
-    "Norway":         {"name": "Oslo",       "dhl_index": 38, "handling_days": 3},
-    "Switzerland":    {"name": "Zurich",     "dhl_index": 41, "handling_days": 6},
-    "United Kingdom": {"name": "Felixstowe", "dhl_index": 55, "handling_days": 3},
+    "Germany":        {"name": "Hamburg",      "dhl_index": 62, "handling_days": 3},
+    "European Union": {"name": "Hamburg",      "dhl_index": 62, "handling_days": 3},
+    "Netherlands":    {"name": "Rotterdam",    "dhl_index": 45, "handling_days": 3},
+    "Belgium":        {"name": "Antuérpia",    "dhl_index": 48, "handling_days": 3},
+    "France":         {"name": "Le Havre",     "dhl_index": 52, "handling_days": 3},
+    "Italy":          {"name": "Genoa",        "dhl_index": 58, "handling_days": 3},
+    "Norway":         {"name": "Oslo",         "dhl_index": 38, "handling_days": 3},
+    "Switzerland":    {"name": "Zurich",       "dhl_index": 41, "handling_days": 6},
+    "United Kingdom": {"name": "Felixstowe",   "dhl_index": 55, "handling_days": 3},
+    "Spain":          {"name": "Valencia",     "dhl_index": 50, "handling_days": 3},
+    "United States":  {"name": "Miami",        "dhl_index": 58, "handling_days": 3},
+    "Japan":          {"name": "Yokohama",     "dhl_index": 44, "handling_days": 4},
+    "China":          {"name": "Shanghai",     "dhl_index": 71, "handling_days": 4},
+    "South Korea":    {"name": "Busan",        "dhl_index": 40, "handling_days": 4},
+    "Argentina":      {"name": "Buenos Aires", "dhl_index": 48, "handling_days": 2},
+    "Colombia":       {"name": "Cartagena",    "dhl_index": 52, "handling_days": 3},
+    "Mexico":         {"name": "Veracruz",     "dhl_index": 50, "handling_days": 3},
+    "Saudi Arabia":   {"name": "Jeddah",       "dhl_index": 48, "handling_days": 4},
+    "UAE":            {"name": "Jebel Ali",    "dhl_index": 42, "handling_days": 3},
 }
 
 _DEST_HANDLING_DAYS = 3
@@ -46,6 +66,8 @@ IMPORT_ROUTES: dict[str, dict] = {
     "Colombia":       {"origin_port": "Port of Cartagena",     "destination_port": "Porto de Santos", "transit_days":  8, "dhl_index": 52},
     "Peru":           {"origin_port": "Port of Callao",        "destination_port": "Porto de Santos", "transit_days": 12, "dhl_index": 50},
     "Chile":          {"origin_port": "Port of Valparaíso",    "destination_port": "Porto de Santos", "transit_days":  6, "dhl_index": 44},
+    "Vietnam":        {"origin_port": "Port of Ho Chi Minh City", "destination_port": "Porto de Santos", "transit_days": 30, "dhl_index": 60},
+    "Ethiopia":       {"origin_port": "Port of Djibouti",      "destination_port": "Porto de Santos", "transit_days": 32, "dhl_index": 65},
 }
 
 _SANTOS_DHL_INDEX = 55
