@@ -6,6 +6,14 @@ _SUPPLIER_PROFILE = {
     "supply_chain_mapped": True,
 }
 
+# EUDR 2023/1115 applies directly to EU members; Norway/Switzerland/UK are treated
+# as EU-equivalent here for GPS traceability purposes (bilateral/EEA arrangements),
+# matching the regulatory_agent's non-EU-destination handling.
+EUDR_APPLICABLE_DESTINATIONS = {
+    "European Union", "Germany", "Netherlands", "France",
+    "Norway", "Switzerland", "United Kingdom",
+}
+
 REGION_VOLUMES = {
     'Cerrado Mineiro': 28.5,      # mil toneladas/ano
     'Sul de Minas': 22.0,
@@ -529,19 +537,29 @@ def _risk_level(score: int) -> str:
 
 
 class GapAgent:
-    async def analyze(self, regulatory_result: dict, commodity: str) -> dict:
+    async def analyze(self, regulatory_result: dict, commodity: str, destination: str = "European Union") -> dict:
         profile = _SUPPLIER_PROFILE.copy()
+        eudr_applies = destination in EUDR_APPLICABLE_DESTINATIONS
 
         score = 0
         gaps: list[str] = []
 
         if profile["gps_coverage_pct"] < 100:
             missing = 100 - profile["gps_coverage_pct"]
-            score += 40
-            gaps.append(
-                f"GPS coverage is {profile['gps_coverage_pct']}% — EUDR requires 100% plot-level geolocation. "
-                f"{missing}% of production area lacks coordinates (Annex I requirement)."
-            )
+            if eudr_applies:
+                score += 40
+                gaps.append(
+                    f"GPS coverage is {profile['gps_coverage_pct']}% — "
+                    f"EUDR Article 4.2 requires 100% GPS geolocation — legal requirement. "
+                    f"{missing}% of production area lacks coordinates (Annex I requirement)."
+                )
+            else:
+                score += 20
+                gaps.append(
+                    f"GPS coverage is {profile['gps_coverage_pct']}% — "
+                    f"GPS traceability not legally required for {destination}, but recommended as "
+                    f"best practice for premium market positioning."
+                )
 
         if not profile["deforestation_docs"]:
             score += 35
