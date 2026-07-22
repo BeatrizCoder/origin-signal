@@ -17,8 +17,9 @@ const VERDICT_COLOR: Record<RouteComparison['verdict'], string> = {
 };
 
 const IMPORT_ORIGINS = [
-  'Argentina', 'Uruguay', 'Paraguay', 'Colombia', 'Peru', 'Chile',
-  'United States', 'China', 'European Union',
+  'United States', 'China', 'European Union', 'Norway', 'Switzerland',
+  'United Kingdom', 'Argentina', 'Colombia', 'Peru', 'Chile',
+  'Uruguay', 'Paraguay', 'Vietnam', 'Ethiopia',
 ];
 
 const MIN_ORIGINS = 2;

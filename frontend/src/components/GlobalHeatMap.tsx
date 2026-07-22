@@ -72,7 +72,8 @@ const COUNTRY_COORDS: Record<string, Coord> = {
   'Peru':     { x: 145, y: 300 },
   'Argentina':{ x: 190, y: 420 },
   'Chile':    { x: 140, y: 390 },
-  'Honduras': { x: 105, y: 235 },
+  'Uruguay':  { x: 200, y: 400 },
+  'Paraguay': { x: 175, y: 370 },
   // Asia / Middle East
   'China':        { x: 720, y: 110 },
   'Japan':        { x: 840, y: 100 },

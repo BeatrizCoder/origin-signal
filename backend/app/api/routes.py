@@ -393,16 +393,18 @@ async def global_risk(commodity: str) -> dict:
         'United States': {'regulatory': 62, 'climate': 58, 'market': 50, 'logistics': 42, 'overall': 55},
         'China': {'regulatory': 75, 'climate': 65, 'market': 55, 'logistics': 68, 'overall': 67},
         'European Union': {'regulatory': 35, 'climate': 42, 'market': 48, 'logistics': 35, 'overall': 40},
-        'Germany': {'regulatory': 32, 'climate': 38, 'market': 50, 'logistics': 32, 'overall': 38},
-        'Netherlands': {'regulatory': 28, 'climate': 35, 'market': 52, 'logistics': 28, 'overall': 36},
-        'France': {'regulatory': 35, 'climate': 40, 'market': 48, 'logistics': 36, 'overall': 40},
+        # Não-membros da UE — acordos comerciais distintos com o Brasil
+        'Norway': {'regulatory': 26, 'climate': 32, 'market': 46, 'logistics': 30, 'overall': 33},
+        'Switzerland': {'regulatory': 24, 'climate': 30, 'market': 48, 'logistics': 26, 'overall': 31},
+        'United Kingdom': {'regulatory': 34, 'climate': 36, 'market': 54, 'logistics': 34, 'overall': 40},
         'Argentina': {'regulatory': 25, 'climate': 35, 'market': 45, 'logistics': 15, 'overall': 30},
         'Colombia': {'regulatory': 45, 'climate': 55, 'market': 52, 'logistics': 32, 'overall': 46},
         'Peru': {'regulatory': 48, 'climate': 58, 'market': 50, 'logistics': 38, 'overall': 49},
         'Chile': {'regulatory': 30, 'climate': 40, 'market': 55, 'logistics': 25, 'overall': 38},
+        'Uruguay': {'regulatory': 20, 'climate': 30, 'market': 48, 'logistics': 12, 'overall': 27},
+        'Paraguay': {'regulatory': 22, 'climate': 32, 'market': 42, 'logistics': 14, 'overall': 28},
         'Vietnam': {'regulatory': 55, 'climate': 70, 'market': 48, 'logistics': 52, 'overall': 57},
         'Ethiopia': {'regulatory': 60, 'climate': 75, 'market': 45, 'logistics': 65, 'overall': 62},
-        'Honduras': {'regulatory': 52, 'climate': 65, 'market': 42, 'logistics': 55, 'overall': 54},
     }
 
     # Adiciona contexto especial para EUA (tarifas Trump 2025)

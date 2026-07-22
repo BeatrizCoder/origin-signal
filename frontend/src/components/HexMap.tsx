@@ -77,8 +77,11 @@ const IMPORT_ORIGINS_MAP: Region[] = [
   { id: 6,  name: 'United States',  col: 1, row: 2, scores: { regulatory: 62, climate: 58, market: 50, logistics: 42 }, flag: '🇺🇸' },
   { id: 7,  name: 'China',          col: 7, row: 2, scores: { regulatory: 75, climate: 65, market: 55, logistics: 68 }, flag: '🇨🇳' },
   { id: 8,  name: 'European Union', col: 5, row: 1, scores: { regulatory: 35, climate: 42, market: 48, logistics: 35 }, flag: '🇪🇺' },
-  { id: 9,  name: 'Germany',        col: 5, row: 2, scores: { regulatory: 32, climate: 38, market: 50, logistics: 32 }, flag: '🇩🇪' },
-  { id: 10, name: 'Netherlands',    col: 6, row: 1, scores: { regulatory: 28, climate: 35, market: 52, logistics: 28 }, flag: '🇳🇱' },
+  { id: 9,  name: 'Norway',         col: 5, row: 0, scores: { regulatory: 26, climate: 32, market: 46, logistics: 30 }, flag: '🇳🇴' },
+  { id: 10, name: 'Switzerland',    col: 5, row: 2, scores: { regulatory: 24, climate: 30, market: 48, logistics: 26 }, flag: '🇨🇭' },
+  { id: 11, name: 'United Kingdom', col: 6, row: 1, scores: { regulatory: 34, climate: 36, market: 54, logistics: 34 }, flag: '🇬🇧' },
+  { id: 12, name: 'Vietnam',        col: 7, row: 3, scores: { regulatory: 58, climate: 62, market: 48, logistics: 55 }, flag: '🇻🇳' },
+  { id: 13, name: 'Ethiopia',       col: 4, row: 1, scores: { regulatory: 68, climate: 70, market: 40, logistics: 62 }, flag: '🇪🇹' },
 ];
 
 const COUNTRY_KEY: Record<string, TranslationKey> = {
@@ -91,8 +94,11 @@ const COUNTRY_KEY: Record<string, TranslationKey> = {
   'United States':  'country_united_states',
   'China':          'country_china',
   'European Union': 'country_european_union',
-  'Germany':        'country_germany',
-  'Netherlands':    'country_netherlands',
+  'Norway':         'country_norway',
+  'Switzerland':    'country_switzerland',
+  'United Kingdom': 'country_united_kingdom',
+  'Vietnam':        'country_vietnam',
+  'Ethiopia':       'country_ethiopia',
 };
 
 const HEX_R = 48;
