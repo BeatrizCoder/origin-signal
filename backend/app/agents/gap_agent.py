@@ -537,8 +537,39 @@ def _risk_level(score: int) -> str:
 
 
 class GapAgent:
-    async def analyze(self, regulatory_result: dict, commodity: str, destination: str = "European Union") -> dict:
+    async def analyze(
+        self,
+        regulatory_result: dict,
+        commodity: str,
+        destination: str = "European Union",
+        trade_direction: str = "export",
+        origin: str = "Brazil",
+    ) -> dict:
         profile = _SUPPLIER_PROFILE.copy()
+
+        if trade_direction == "import":
+            score = 30 if origin in ["China", "United States", "Vietnam", "Ethiopia"] else 15
+            gaps = [
+                "Licença de Importação (LI) status: verify pre-approval in SISCOMEX before shipment",
+                f"MAPA phytosanitary certificate from {origin}: required before cargo departure",
+                "NCM classification: confirm with despachante aduaneiro to avoid classification risk",
+                "Canal de despacho: Chinese/non-Mercosul origins have higher canal vermelho probability",
+            ]
+            recommendations = [
+                "Pre-register LI in SISCOMEX before shipment departs to avoid port delays",
+                f"Secure MAPA phytosanitary certificate from {origin} before cargo departure",
+                "Validate NCM classification with a despachante aduaneiro before customs filing",
+                "Budget extra clearance time if canal vermelho inspection is likely",
+            ]
+            return {
+                "gap_risk_score":   score,
+                "risk_level":       _risk_level(score),
+                "supplier_profile": profile,
+                "gaps_identified":  gaps,
+                "recommendations":  recommendations,
+                "action_timeline":  {"gps_mapping_days": 0, "documentation_days": 0},
+            }
+
         eudr_applies = destination in EUDR_APPLICABLE_DESTINATIONS
 
         score = 0
@@ -554,7 +585,7 @@ class GapAgent:
                     f"{missing}% of production area lacks coordinates (Annex I requirement)."
                 )
             else:
-                score += 20
+                score += 15
                 gaps.append(
                     f"GPS coverage is {profile['gps_coverage_pct']}% — "
                     f"GPS traceability not legally required for {destination}, but recommended as "
@@ -562,11 +593,18 @@ class GapAgent:
                 )
 
         if not profile["deforestation_docs"]:
-            score += 35
-            gaps.append(
-                "Deforestation-free documentation is missing — EUDR Article 3 prohibits placing products "
-                "on the EU market without verified deforestation-free proof."
-            )
+            if eudr_applies:
+                score += 35
+                gaps.append(
+                    "Deforestation-free documentation is missing — EUDR Article 3 prohibits placing products "
+                    "on the EU market without verified deforestation-free proof."
+                )
+            else:
+                score += 10
+                gaps.append(
+                    f"Deforestation-free certification not legally required for {destination} — voluntary "
+                    "certification (Rainforest Alliance, UTZ) recommended for premium positioning."
+                )
 
         if not profile["supply_chain_mapped"]:
             score += 25

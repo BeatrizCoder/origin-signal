@@ -110,7 +110,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
 
     # Phase 2: gap (uses reg) + executive (uses all, incl. tariff) in parallel
     (gap, gap_ms), (executive, exec_ms) = await asyncio.gather(
-        _timed(_gap.analyze(reg, body.commodity, body.destination)),
+        _timed(_gap.analyze(reg, body.commodity, body.destination, trade_direction=body.trade_direction, origin=body.origin)),
         _timed(_executive.synthesize(
             reg, clim, mkt, logi, {}, body.query, body.commodity,
             body.destination, body.trade_direction, body.origin,
