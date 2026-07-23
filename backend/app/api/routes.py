@@ -142,7 +142,11 @@ async def analyze(body: AnalyzeRequest) -> dict:
             gap["gap_risk_score"]            * 0.10
         )))
 
-    honeycomb = calculate_hes(body.commodity, body.trade_direction)
+    honeycomb = calculate_hes(
+        commodity=body.commodity,
+        trade_direction=body.trade_direction,
+        origin=body.origin if body.trade_direction == 'import' else None,
+    )
 
     base_scores = {
         region: {

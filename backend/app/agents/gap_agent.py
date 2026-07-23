@@ -448,7 +448,7 @@ IMPORT_ORIGIN_RISK_SCORES = {
 }
 
 
-def calculate_hes(commodity: str = 'coffee', trade_direction: str = 'export') -> dict:
+def calculate_hes(commodity: str = 'coffee', trade_direction: str = 'export', origin: str | None = None) -> dict:
     # Seleciona dataset baseado em commodity e direção
     if trade_direction == 'import':
         volumes = IMPORT_ORIGIN_VOLUMES
@@ -501,6 +501,48 @@ def calculate_hes(commodity: str = 'coffee', trade_direction: str = 'export') ->
         ((low_risk_volume + sum(v for _, _, v in critical_cells)) / total_volume) * 100, 1
     )
 
+    # Display list — highlights the current analysis origin at the top when known.
+    critical_cells_out = [
+        {'region': r, 'risk_score': s, 'volume_kt': v, 'is_current_origin': False}
+        for r, s, v in critical_cells
+    ]
+    has_current_origin = bool(origin) and trade_direction == 'import' and origin in risk_scores
+    if has_current_origin:
+        critical_cells_out = [c for c in critical_cells_out if c['region'] != origin]
+        critical_cells_out.insert(0, {
+            'region': origin,
+            'risk_score': risk_scores[origin],
+            'volume_kt': volumes.get(origin, 0),
+            'is_current_origin': True,
+        })
+
+    if has_current_origin:
+        origin_risk = risk_scores[origin]
+        origin_volume = volumes.get(origin, 0)
+        if origin_risk >= 60:
+            insight = (
+                f"Current sourcing from {origin} (Risk {origin_risk}) represents elevated supply risk. "
+                "Diversifying to lower-risk origins could increase HES."
+            )
+        elif origin_risk >= 40:
+            insight = (
+                f"Current sourcing from {origin} shows moderate supply risk. "
+                f"{origin} contributes {origin_volume}kt to total monitored volume."
+            )
+        else:
+            insight = (
+                f"Current sourcing from {origin} (Risk {origin_risk}) is in a low-risk cell. "
+                "HES reflects favorable supply reliability for this origin."
+            )
+    else:
+        insight = (
+            f"Only {hes}% of {'importable' if trade_direction == 'import' else 'exportable'} volume "
+            f"is in low-risk {'origins' if trade_direction == 'import' else 'cells'}. "
+            f"{'Diversifying away from' if trade_direction == 'import' else 'Regularizing'} "
+            f"{critical_cells[0][0] if critical_cells else 'critical regions'} "
+            f"could increase HES to {potential_hes}% (+{round(potential_hes-hes,1)}pp)."
+        )
+
     return {
         'hes_score': hes,
         'hes_label': 'Critical' if hes < 30 else 'Low' if hes < 50 else 'Moderate' if hes < 70 else 'Good',
@@ -515,17 +557,10 @@ def calculate_hes(commodity: str = 'coffee', trade_direction: str = 'export') ->
         'mid_risk_cells': len(mid_cells),
         'high_risk_cells': len(high_cells),
         'total_cells': len(volumes),
-        'critical_cells': [
-            {'region': r, 'risk_score': s, 'volume_kt': v}
-            for r, s, v in critical_cells
-        ],
+        'critical_cells': critical_cells_out,
         'potential_hes': potential_hes,
         'potential_gain': round(potential_hes - hes, 1),
-        'insight': f"Only {hes}% of {'importable' if trade_direction == 'import' else 'exportable'} volume "
-                   f"is in low-risk {'origins' if trade_direction == 'import' else 'cells'}. "
-                   f"{'Diversifying away from' if trade_direction == 'import' else 'Regularizing'} "
-                   f"{critical_cells[0][0] if critical_cells else 'critical regions'} "
-                   f"could increase HES to {potential_hes}% (+{round(potential_hes-hes,1)}pp)."
+        'insight': insight,
     }
 
 
