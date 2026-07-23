@@ -101,6 +101,8 @@ class TariffAgent:
                 else f"No preferential agreement — full TEC rate {ncm_info['ii_tec']}% applies",
                 f"Total tax burden: {tax_burden_pct:.1f}% of CIF value (II + IPI + PIS/COFINS + ICMS)",
                 f"Estimated landed cost: R$ {total_landed:,.2f} for US$ {cif_value_usd:,} CIF shipment",
+                f"ICMS: R$ {icms:,.2f} (18% — São Paulo/Santos standard rate, varies by destination state: "
+                "MG/RJ typically 12%, other states 12-18%)",
             ],
             "recommendations": [
                 f"Classify under NCM {ncm_info['ncm']} — verify with despachante aduaneiro",
@@ -109,5 +111,7 @@ class TariffAgent:
                 else "No FTA available — budget full TEC tariff burden",
                 "File LI (Licença de Importação) in SISCOMEX before shipment",
                 f"Budget total landed cost at {tax_burden_pct:.0f}% above CIF value for margin planning",
+                "Verify ICMS rate with destination state tax authority (SEFAZ) — São Paulo rate (18%) used as "
+                "reference; actual rate depends on importer's state registration and product classification.",
             ],
         }

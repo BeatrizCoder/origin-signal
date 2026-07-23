@@ -121,7 +121,9 @@ async def analyze(body: AnalyzeRequest) -> dict:
     pipeline_end_dt = datetime.utcnow()
 
     # Weighted average, each branch's weights sum to 1.00.
-    # Import includes tariff (0.25/0.20/0.15/0.15/0.10/0.15); export has no tariff term (0.30/0.25/0.20/0.15/0.10).
+    # Export: regulatory(30%) + climate(25%) + market(20%) + logistics(15%) + gap(10%).
+    # Import: regulatory(25%) + climate(20%) + market(15%) + logistics(15%) + gap(10%) + tariff(15%) —
+    # tariff is added as a 6th dimension, it does not replace gap.
     if is_import:
         overall = max(0, min(100, round(
             reg["risk_score"]                * 0.25 +

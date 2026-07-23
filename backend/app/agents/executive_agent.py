@@ -37,6 +37,7 @@ Guidelines:
 - All timelines must be concrete and derived from agent data, not generic.
 - CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals.
 - CRITICAL: Always use exact region and port names: "Cerrado Mineiro" (never "Cerrado Melo"), "Porto de Santos" and "Port of Miami" (never "Port of Malm" or similar invented variations).
+- CRITICAL: For customs penalties and import violations in Brazil, cite Decreto-Lei 37/66 (Lei Aduaneira) for customs infractions and IN RFB 1.603/2015 for import declaration requirements. Cite Lei 8.078/90 (CDC) ONLY when consumer protection context applies. Never cite CDC for B2B import/export compliance issues.
 """
 
 def _build_import_prompt(origin: str) -> str:
@@ -71,6 +72,7 @@ Guidelines:
 - overall_verdict reflects whether the Brazilian company should proceed with importing from {origin} now.
 - If tariff_agent contains calculation data, cite calculation.tax_burden_pct (total tax burden as % of CIF) and calculation.total_landed_brl (landed cost in BRL) explicitly when discussing cost or budget impact. Reference tariff_agent.ncm_code and tariff_agent.trade_agreement when justifying the tariff burden or a preferential rate.
 - CRITICAL: Always use exact region and port names: "Cerrado Mineiro" (never "Cerrado Melo"), "Porto de Santos" and "Port of Miami" (never "Port of Malm" or similar invented variations).
+- CRITICAL: For customs penalties and import violations in Brazil, cite Decreto-Lei 37/66 (Lei Aduaneira) for customs infractions and IN RFB 1.603/2015 for import declaration requirements. Cite Lei 8.078/90 (CDC) ONLY when consumer protection context applies. Never cite CDC for B2B import/export compliance issues.
 """
 
 _MOCK_EXPORT = {
