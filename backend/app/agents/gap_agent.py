@@ -607,11 +607,18 @@ class GapAgent:
                 )
 
         if not profile["supply_chain_mapped"]:
-            score += 25
-            gaps.append(
-                "Supply chain is not fully mapped — EUDR Article 8 requires operators to document all "
-                "business entities from production to first placement on EU market."
-            )
+            if eudr_applies:
+                score += 25
+                gaps.append(
+                    "Supply chain is not fully mapped — EUDR Article 8 requires operators to document all "
+                    "business entities from production to first placement on EU market."
+                )
+            else:
+                score += 8
+                gaps.append(
+                    f"Supply chain is not fully mapped — full traceability not legally required for "
+                    f"{destination}, but recommended for supply chain transparency and premium positioning."
+                )
 
         score = max(0, min(100, score))
 
@@ -627,10 +634,16 @@ class GapAgent:
                 "4C Association) before next export cycle."
             )
         if not profile["supply_chain_mapped"]:
-            recommendations.append(
-                "Conduct supply chain mapping exercise with all intermediaries; collect name, address, "
-                "and email contacts as required by EUDR Annex I."
-            )
+            if eudr_applies:
+                recommendations.append(
+                    "Conduct supply chain mapping exercise with all intermediaries; collect name, address, "
+                    "and email contacts as required by EUDR Annex I."
+                )
+            else:
+                recommendations.append(
+                    f"Consider voluntary supply chain mapping to strengthen supplier relationships and "
+                    f"prepare for potential future {destination} regulations."
+                )
         recommendations.append(
             "Implement a digital due diligence management system to track EUDR compliance status continuously."
         )
