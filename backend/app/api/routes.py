@@ -120,6 +120,8 @@ async def analyze(body: AnalyzeRequest) -> dict:
 
     pipeline_end_dt = datetime.utcnow()
 
+    # Weighted average, each branch's weights sum to 1.00.
+    # Import includes tariff (0.25/0.20/0.15/0.15/0.10/0.15); export has no tariff term (0.30/0.25/0.20/0.15/0.10).
     if is_import:
         overall = max(0, min(100, round(
             reg["risk_score"]                * 0.25 +

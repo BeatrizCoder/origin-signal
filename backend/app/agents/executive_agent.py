@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime, timezone
 
 import anthropic
 
@@ -193,6 +194,22 @@ class ExecutiveAgent:
 
         system_prompt = _build_import_prompt(origin) if is_import else _SYSTEM_PROMPT_EXPORT
 
+        current_date = datetime.now(timezone.utc).strftime("%B %Y")
+        current_year = datetime.now(timezone.utc).year
+        system_prompt += (
+            f"\n\nToday's date is {current_date}. All trade windows, deadlines and recommendations "
+            f"must reference {current_year} or later dates. Never cite dates from {current_year - 1} "
+            "or earlier as future windows."
+        )
+
+        calc = (tariff or {}).get("calculation", {})
+        tax_guidance = (
+            f"Actual tax calculation for narrative: II={calc.get('ii_rate_applied', 0)}%, "
+            f"IPI={calc.get('ipi_rate', 0)}%, PIS/COFINS=9.65% (fixed), ICMS=18% (SP standard rate, fixed). "
+            f"Total tax burden={calc.get('tax_burden_pct', 0)}%. "
+            "When citing tax breakdown in narrative, always use these exact figures — never approximate or invent a different ICMS rate."
+        )
+
         context = json.dumps({
             "query": query,
             "commodity": commodity,
@@ -204,6 +221,7 @@ class ExecutiveAgent:
             "logistics_agent":  logistics,
             "gap_agent":        gap,
             "tariff_agent":     tariff,
+            "tax_guidance":     tax_guidance,
         }, indent=2, ensure_ascii=False)
 
         model = "claude-haiku-4-5-20251001" if is_import else "claude-sonnet-4-6"
