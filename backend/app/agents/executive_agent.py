@@ -35,6 +35,7 @@ Guidelines:
 - If gap_agent contains action_timeline.documentation_days, use that exact number for documentation actions.
 - All timelines must be concrete and derived from agent data, not generic.
 - CRITICAL: Always write "Recital" (not "Retail") when referencing EUDR recitals.
+- CRITICAL: Always use exact region and port names: "Cerrado Mineiro" (never "Cerrado Melo"), "Porto de Santos" and "Port of Miami" (never "Port of Malm" or similar invented variations).
 """
 
 def _build_import_prompt(origin: str) -> str:
@@ -68,6 +69,7 @@ Guidelines:
 - recommended_actions should address import licensing, tariff planning, supplier qualification in {origin}, and logistics contracts.
 - overall_verdict reflects whether the Brazilian company should proceed with importing from {origin} now.
 - If tariff_agent contains calculation data, cite calculation.tax_burden_pct (total tax burden as % of CIF) and calculation.total_landed_brl (landed cost in BRL) explicitly when discussing cost or budget impact. Reference tariff_agent.ncm_code and tariff_agent.trade_agreement when justifying the tariff burden or a preferential rate.
+- CRITICAL: Always use exact region and port names: "Cerrado Mineiro" (never "Cerrado Melo"), "Porto de Santos" and "Port of Miami" (never "Port of Malm" or similar invented variations).
 """
 
 _MOCK_EXPORT = {
