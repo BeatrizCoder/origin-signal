@@ -39,6 +39,16 @@ export interface MarketResult {
   };
   findings: string[];
   recommendations: string[];
+  geopolitical_risk?: {
+    geopolitical_risk_score: number;
+    risk_level: string;
+    china_export_share_pct: number;
+    us_china_tariff_pct: number;
+    trade_war_since: number;
+    diversification_targets: string[];
+    findings: string[];
+    recommendations: string[];
+  };
 }
 
 export interface LogisticsResult {
