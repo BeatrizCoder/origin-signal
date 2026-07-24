@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { AnalyzeResponse, HistoryItem } from '../types';
-import { getHistory, getAnalysisById } from '../services/api';
+import type { HistoryItem } from '../types';
+import { getHistory } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
 import Logo from './ui/Logo';
@@ -33,14 +33,13 @@ function truncate(text: string, max: number): string {
 
 interface Props {
   onBack: () => void;
-  onSelectAnalysis: (result: AnalyzeResponse) => void;
+  onViewFull: (id: string) => void;
 }
 
-export default function HistoryScreen({ onBack, onSelectAnalysis }: Props) {
+export default function HistoryScreen({ onBack, onViewFull }: Props) {
   const [items,   setItems]   = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
-  const [openingId, setOpeningId] = useState<string | null>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -51,18 +50,6 @@ export default function HistoryScreen({ onBack, onSelectAnalysis }: Props) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
-
-  async function handleViewFull(id: string) {
-    setOpeningId(id);
-    try {
-      const doc = await getAnalysisById(id);
-      onSelectAnalysis(doc.full_result);
-    } catch {
-      setError('Failed to load analysis.');
-    } finally {
-      setOpeningId(null);
-    }
-  }
 
   return (
     <div style={{ minHeight: '100vh', color: COLORS.textPrimary, fontFamily: FONT }}>
@@ -142,8 +129,7 @@ export default function HistoryScreen({ onBack, onSelectAnalysis }: Props) {
                 )}
 
                 <button
-                  onClick={() => handleViewFull(item.id)}
-                  disabled={openingId !== null}
+                  onClick={() => onViewFull(item.id)}
                   style={{
                     alignSelf: 'flex-start',
                     background: 'none',
@@ -151,14 +137,13 @@ export default function HistoryScreen({ onBack, onSelectAnalysis }: Props) {
                     borderRadius: 6,
                     color: COLORS.amberBright,
                     padding: '6px 12px',
-                    cursor: openingId !== null ? 'not-allowed' : 'pointer',
+                    cursor: 'pointer',
                     fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
                     fontFamily: FONT,
                     marginTop: 4,
-                    opacity: openingId !== null && openingId !== item.id ? 0.5 : 1,
                   }}
                 >
-                  {openingId === item.id ? t('generating') : t('view_full_analysis').toUpperCase()}
+                  {t('view_full_analysis').toUpperCase()}
                 </button>
               </div>
             );

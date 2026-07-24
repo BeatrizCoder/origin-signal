@@ -163,8 +163,15 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const [downloading, setDownloading] = useState<'pdf' | 'excel' | null>(null);
   const [pipelineActive, setPipelineActive] = useState(0);
   const [revealedSections, setRevealedSections] = useState<Set<string>>(new Set());
+  const [linkCopied, setLinkCopied] = useState(false);
   const { t } = useLanguage();
   const isImport = tradeDirection === 'import';
+
+  async function handleShare() {
+    await navigator.clipboard.writeText(window.location.href);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
 
   async function handleExport(format: 'pdf' | 'excel') {
     setDownloading(format);
@@ -370,6 +377,24 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               {downloading === fmt ? t('generating') : fmt === 'pdf' ? t('export_pdf') : t('export_excel')}
             </button>
           ))}
+          <button
+            onClick={handleShare}
+            style={{
+              flex: 1,
+              background: 'none',
+              border: `1px solid ${COLORS.amber}66`,
+              borderRadius: 6,
+              color: COLORS.amberBright,
+              padding: '6px 8px',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontFamily: FONT,
+              letterSpacing: 0.3,
+              transition: 'all 0.15s',
+            }}
+          >
+            {linkCopied ? t('link_copied') : `🔗 ${t('share')}`}
+          </button>
         </div>
 
         {/* Scrollable sidebar body */}
