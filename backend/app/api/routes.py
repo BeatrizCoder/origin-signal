@@ -121,9 +121,11 @@ async def analyze(body: AnalyzeRequest) -> dict:
     pipeline_end_dt = datetime.utcnow()
 
     # Weighted average, each branch's weights sum to 1.00.
-    # Export: regulatory(30%) + climate(25%) + market(20%) + logistics(15%) + gap(10%).
-    # Import: regulatory(25%) + climate(20%) + market(15%) + logistics(15%) + gap(10%) + tariff(15%) —
-    # tariff is added as a 6th dimension, it does not replace gap.
+    # NOT a simple average — regulatory and climate dominate, but gap still shifts the rounded result.
+    # Export weighted average: regulatory(30%) + climate(25%) + market(20%) + logistics(15%) + gap(10%)
+    # Import weighted average: regulatory(25%) + climate(20%) + market(15%) + logistics(15%) + tariff(15%) + gap(10%)
+    # Import adds tariff as a 6th dimension instead of replacing gap; gap_risk_score for import is
+    # binary (15 or 30) based on origin — see GapAgent.analyze(trade_direction="import").
     if is_import:
         overall = max(0, min(100, round(
             reg["risk_score"]                * 0.25 +
