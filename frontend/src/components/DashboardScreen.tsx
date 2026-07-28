@@ -78,6 +78,8 @@ function confidenceColor(v: number): string {
   return COLORS.danger;
 }
 
+const SEVERITY_ICON: Record<string, string> = { High: '🔴', Medium: '🟡', Low: '🟢' };
+
 const CARD: React.CSSProperties = {
   background: COLORS.panel, border: '1px solid rgba(255,255,255,0.04)',
   borderRadius: 10, padding: '22px 26px',
@@ -247,6 +249,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
     order.push('traderoute');
     if (isImport && result.tariff && result.tariff.ncm_code) order.push('tariff');
     order.push('memo');
+    order.push('alerts');
     return order;
   }, [result, exec, isImport]);
 
@@ -904,6 +907,67 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                 {exec?.trade_window && (
                   <BriefingBlock title="Trade Window" last>{exec.trade_window}</BriefingBlock>
                 )}
+              </div>
+              </RevealSection>
+
+              {/* ── Regulatory Alerts ── */}
+              <RevealSection visible={revealedSections.has('alerts')}>
+              <div style={{ padding: '0 0 40px' }}>
+                <style>{`
+                  @keyframes os-alert-pulse {
+                    0%, 100% { opacity: 0.5; transform: scale(0.9); }
+                    50%      { opacity: 1;   transform: scale(1.15); }
+                  }
+                `}</style>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Eyebrow>⬢ {t('regulatory_alerts')}</Eyebrow>
+                  {result.alerts && result.alerts.alerts.length > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{
+                        width: 7, height: 7, borderRadius: '50%', background: COLORS.danger,
+                        animation: 'os-alert-pulse 1.2s ease-in-out infinite',
+                      }} />
+                      <PillChip color={COLORS.danger}>{t('live_alerts')}</PillChip>
+                    </div>
+                  ) : (
+                    <PillChip color={COLORS.petroleo}>{t('no_alerts')}</PillChip>
+                  )}
+                </div>
+
+                {result.alerts && result.alerts.alerts.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {result.alerts.alerts.map((a, i) => (
+                      <div key={i} style={{ ...CARD, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>
+                          <span>{SEVERITY_ICON[a.severity] ?? '⚪'}</span>
+                          <span>{a.title}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT }}>
+                          {a.date} · {a.source}
+                        </div>
+                        <div style={{ fontSize: 13, color: COLORS.textPrimary, lineHeight: 1.6, fontFamily: FONT }}>
+                          {a.summary}
+                        </div>
+                        <a
+                          href={a.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: 12, color: COLORS.amberBright, fontFamily: FONT, textDecoration: 'none', alignSelf: 'flex-start' }}
+                        >
+                          {t('view_source')}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ ...CARD, fontSize: 13, color: COLORS.textSecondary, fontFamily: FONT }}>
+                    {t('no_alerts_desc')}
+                  </div>
+                )}
+
+                <div style={{ fontSize: 11, color: COLORS.textSecondary, fontFamily: FONT, marginTop: 10 }}>
+                  {t('alerts_source')}
+                </div>
               </div>
               </RevealSection>
             </div>

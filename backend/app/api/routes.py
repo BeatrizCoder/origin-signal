@@ -5,6 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
+from app.agents.alerts_agent import AlertsAgent
 from app.agents.climate_agent import ClimateAgent, COUNTRY_COORDS, REGION_COORDS
 from app.agents.executive_agent import ExecutiveAgent
 from app.agents.gap_agent import GapAgent, REGION_ADJACENCY, REGION_RISK_SCORES, calculate_hes, calculate_propagation
@@ -24,6 +25,7 @@ _market     = MarketAgent()
 _logistics  = LogisticsAgent()
 _gap        = GapAgent()
 _tariff     = TariffAgent()
+_alerts     = AlertsAgent()
 _executive  = ExecutiveAgent()
 
 _EMPTY_TARIFF = {
@@ -85,7 +87,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
 
     # Phase 1: independent agents in parallel (+ tariff when importing)
     if is_import:
-        (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (tariff, tariff_ms) = await asyncio.gather(
+        (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (tariff, tariff_ms), (alerts, alerts_ms) = await asyncio.gather(
             _timed(asyncio.to_thread(
                 _regulatory.analyze,
                 body.query, body.commodity, body.origin, body.destination, body.trade_direction,
@@ -94,9 +96,10 @@ async def analyze(body: AnalyzeRequest) -> dict:
             _timed(_market.analyze(body.commodity, body.destination)),
             _timed(_logistics.analyze(body.origin, body.destination, body.commodity, body.trade_direction)),
             _timed(_tariff.analyze(body.commodity, body.origin)),
+            _timed(_alerts.analyze(body.commodity, body.destination, body.origin)),
         )
     else:
-        (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms) = await asyncio.gather(
+        (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (alerts, alerts_ms) = await asyncio.gather(
             _timed(asyncio.to_thread(
                 _regulatory.analyze,
                 body.query, body.commodity, body.origin, body.destination, body.trade_direction,
@@ -104,6 +107,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
             _timed(_climate.analyze(climate_location, body.commodity, is_import)),
             _timed(_market.analyze(body.commodity, body.destination)),
             _timed(_logistics.analyze(body.origin, body.destination, body.commodity, body.trade_direction)),
+            _timed(_alerts.analyze(body.commodity, body.destination, body.origin)),
         )
         tariff = _EMPTY_TARIFF.copy()
         tariff_ms = 0
@@ -165,6 +169,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
     rag_evidence = reg.get('rag_evidence', [])
     reg_confidence = round(sum(c['score'] for c in rag_evidence) / len(rag_evidence)) if rag_evidence else 60
     climate_confidence, market_confidence, logistics_confidence, gap_confidence = 88, 72, 90, 85
+    alerts_confidence = 65  # curated fallback today — EUR-Lex/RASFF live APIs are not publicly reachable
     executive_confidence = round(
         (reg_confidence + climate_confidence + market_confidence + logistics_confidence + gap_confidence) / 5
     )
@@ -237,6 +242,15 @@ async def analyze(body: AnalyzeRequest) -> dict:
                 'output_summary': f"Route {logi.get('origin_port', '—')} → {logi.get('destination_port', '—')}, {logi.get('estimated_transit_days', 0)} days transit",
             },
             {
+                'name': 'Regulatory Alerts Monitor',
+                'model': 'EUR-Lex + RASFF (curated fallback)',
+                'status': 'completed',
+                'duration_ms': alerts_ms,
+                'data_sources': ['EUR-Lex RSS', 'RASFF Notification API'],
+                'confidence': alerts_confidence,
+                'output_summary': alerts.get('insight', ''),
+            },
+            {
                 'name': 'Due Diligence Engine',
                 'model': 'Rule-based + Honeycomb algorithms',
                 'status': 'completed',
@@ -272,6 +286,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "logistics":          logi,
         "gap":                gap,
         "tariff":             tariff,
+        "alerts":             alerts,
         "honeycomb":          honeycomb,
         "propagation":        propagation,
         "executive":          executive,
@@ -366,6 +381,11 @@ async def compare_routes(body: CompareRequest) -> dict:
 @router.get("/honeycomb/{commodity}")
 async def get_honeycomb_score(commodity: str, trade_direction: str = 'export') -> dict:
     return calculate_hes(commodity, trade_direction)
+
+
+@router.get("/alerts/{commodity}")
+async def get_alerts(commodity: str, destination: str = 'European Union') -> dict:
+    return await _alerts.analyze(commodity, destination)
 
 
 @router.get("/global-risk/{commodity}")

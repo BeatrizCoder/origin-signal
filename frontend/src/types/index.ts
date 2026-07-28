@@ -158,6 +158,25 @@ export interface ObservabilityData {
   data_freshness: Record<string, string>;
 }
 
+export interface AlertItem {
+  title: string;
+  date: string;
+  source: string;
+  url: string;
+  summary: string;
+  severity: 'High' | 'Medium' | 'Low';
+  live: boolean;
+}
+
+export interface AlertsResult {
+  alerts: AlertItem[];
+  alert_score: number;
+  risk_level: string;
+  alert_count: number;
+  most_critical: AlertItem | null;
+  insight: string;
+}
+
 export interface AnalyzeResponse {
   regulatory: RegulationResult;
   climate: ClimateResult;
@@ -165,6 +184,7 @@ export interface AnalyzeResponse {
   logistics: LogisticsResult;
   gap: GapResult;
   tariff?: TariffResult;
+  alerts?: AlertsResult;
   honeycomb?: HoneycombResult;
   propagation?: PropagationData;
   executive: ExecutiveResult;
