@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import worldAtlas from 'world-atlas/countries-110m.json';
 import { getGlobalRisk } from '../services/api';
 import type { CountryRiskScores, GlobalRiskResponse } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,7 +15,8 @@ interface Props {
   onAnalyzeRoute?: (origin: string, destination: string, tradeDirection: Direction) => void;
 }
 
-interface Coord { x: number; y: number; }
+// [longitude, latitude] — real-world coordinates, projected onto the GeoJSON map below
+type LatLon = [number, number];
 
 // Palette from the approved prototype — kept local to this component (distinct visual
 // language from the rest of the dashboard's COLORS constants).
@@ -54,43 +57,43 @@ function riskLabel(score: number): 'LOW' | 'MEDIUM' | 'HIGH' {
   return 'HIGH';
 }
 
-const EXPORT_COORDS: Record<string, Coord> = {
-  'European Union':  { x: 285, y: 52 },
-  Germany:            { x: 295, y: 46 },
-  Netherlands:        { x: 278, y: 44 },
-  France:             { x: 272, y: 56 },
-  Norway:             { x: 274, y: 35 },
-  Switzerland:        { x: 288, y: 62 },
-  'United Kingdom':   { x: 262, y: 42 },
-  'United States':    { x: 72,  y: 78 },
-  China:              { x: 462, y: 78 },
-  Japan:              { x: 490, y: 72 },
-  'South Korea':      { x: 478, y: 64 },
-  'Saudi Arabia':     { x: 355, y: 108 },
-  UAE:                { x: 368, y: 118 },
-  Argentina:          { x: 108, y: 228 },
-  Colombia:           { x: 98,  y: 158 },
-  Chile:              { x: 95,  y: 240 },
-  Mexico:             { x: 85,  y: 118 },
-  Uruguay:            { x: 118, y: 235 },
-  Paraguay:           { x: 112, y: 210 },
+const EXPORT_COORDS: Record<string, LatLon> = {
+  'European Union':   [4.3517,   50.8503],
+  Germany:            [10.4515,  51.1657],
+  Netherlands:        [5.2913,   52.1326],
+  France:             [2.2137,   46.2276],
+  Norway:             [8.4689,   60.4720],
+  Switzerland:        [8.2275,   46.8182],
+  'United Kingdom':   [-3.4360,  55.3781],
+  'United States':    [-98.5795, 39.8283],
+  China:              [104.1954, 35.8617],
+  Japan:              [138.2529, 36.2048],
+  'South Korea':      [127.7669, 35.9078],
+  'Saudi Arabia':     [45.0792,  23.8859],
+  UAE:                [53.8478,  23.4241],
+  Argentina:          [-63.6167, -38.4161],
+  Colombia:           [-74.2973, 4.5709],
+  Chile:              [-71.5430, -35.6751],
+  Mexico:             [-102.5528, 23.6345],
+  Uruguay:            [-55.7658, -32.5228],
+  Paraguay:           [-58.4438, -23.4425],
 };
 
-const IMPORT_COORDS: Record<string, Coord> = {
-  'United States':    { x: 72,  y: 78 },
-  China:              { x: 462, y: 78 },
-  'European Union':   { x: 285, y: 52 },
-  Norway:             { x: 274, y: 35 },
-  Switzerland:        { x: 288, y: 62 },
-  'United Kingdom':   { x: 262, y: 42 },
-  Argentina:          { x: 108, y: 228 },
-  Colombia:           { x: 98,  y: 158 },
-  Peru:               { x: 95,  y: 175 },
-  Chile:              { x: 95,  y: 240 },
-  Uruguay:            { x: 118, y: 235 },
-  Paraguay:           { x: 112, y: 210 },
-  Vietnam:            { x: 488, y: 130 },
-  Ethiopia:           { x: 338, y: 162 },
+const IMPORT_COORDS: Record<string, LatLon> = {
+  'United States':    [-98.5795, 39.8283],
+  China:              [104.1954, 35.8617],
+  'European Union':   [4.3517,   50.8503],
+  Norway:             [8.4689,   60.4720],
+  Switzerland:        [8.2275,   46.8182],
+  'United Kingdom':   [-3.4360,  55.3781],
+  Argentina:          [-63.6167, -38.4161],
+  Colombia:           [-74.2973, 4.5709],
+  Peru:               [-75.0152, -9.1900],
+  Chile:              [-71.5430, -35.6751],
+  Uruguay:            [-55.7658, -32.5228],
+  Paraguay:           [-58.4438, -23.4425],
+  Vietnam:            [108.2772, 14.0583],
+  Ethiopia:           [40.4897,  9.1450],
 };
 
 const COUNTRY_REGION: Record<string, string> = {
@@ -104,20 +107,7 @@ const COUNTRY_REGION: Record<string, string> = {
   Ethiopia: 'Africa',
 };
 
-// Simplified but recognizable continent silhouettes, hand-fitted to the 580×320 viewBox
-// around the country coordinates above — not cartographically precise, just legible shapes.
-const CONTINENT_PATHS: Array<{ name: string; d: string }> = [
-  { name: 'North America', d: 'M 20,20 L 150,15 L 165,45 L 150,90 L 120,140 L 90,150 L 55,130 L 15,90 Z' },
-  { name: 'South America', d: 'M 130,150 L 155,175 L 150,210 L 135,250 L 115,290 L 95,285 L 80,240 L 75,195 L 85,165 Z' },
-  { name: 'Europe',        d: 'M 258,24 L 302,27 L 312,50 L 300,72 L 273,74 L 254,62 L 246,42 Z' },
-  { name: 'Africa',        d: 'M 330,142 L 375,145 L 385,180 L 370,220 L 355,260 L 335,255 L 322,210 L 318,175 Z' },
-  { name: 'Asia',          d: 'M 415,45 L 480,38 L 515,55 L 522,90 L 505,125 L 500,152 L 468,148 L 442,122 L 415,95 Z' },
-  { name: 'Middle East',   d: 'M 340,92 L 380,95 L 388,120 L 372,135 L 350,130 L 336,110 Z' },
-  { name: 'Oceania',       d: 'M 525,235 L 565,232 L 572,255 L 558,285 L 530,280 L 520,255 Z' },
-];
-
-const BRAZIL_PATH  = 'M 145,175 L 155,195 L 150,220 L 130,225 L 118,205 L 122,180 Z';
-const BRAZIL_LABEL = { x: 137, y: 203 };
+const BRAZIL_LATLON: LatLon = [-51.9253, -14.2350];
 
 const DIRECTIONS: Direction[] = ['export', 'import'];
 const DIMENSIONS: Dimension[] = ['regulatory', 'climate', 'market', 'overall'];
@@ -279,19 +269,37 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
           ))}
         </div>
 
-        {/* SVG map */}
-        <svg viewBox="0 0 580 320" width="100%" height="100%" style={{ display: 'block' }}>
-          <rect x={0} y={0} width={580} height={320} fill={MAP_BG} />
+        {/* Real-world GeoJSON map (react-simple-maps + world-atlas/Natural Earth) */}
+        <ComposableMap width={800} height={450} style={{ width: '100%', height: '100%', display: 'block', background: MAP_BG }}>
+          <Geographies geography={worldAtlas}>
+            {({ geographies }) =>
+              geographies.map(geo => {
+                const isBrazil = geo.properties.name === 'Brazil';
+                return (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    fill={CONTINENT_FILL}
+                    stroke={isBrazil ? BTN_ACTIVE_BG : CONTINENT_LINE}
+                    strokeWidth={isBrazil ? 1.25 : 0.6}
+                    strokeOpacity={isBrazil ? 0.6 : 1}
+                    style={{
+                      default: { outline: 'none' },
+                      hover: { outline: 'none' },
+                      pressed: { outline: 'none' },
+                    }}
+                  />
+                );
+              })
+            }
+          </Geographies>
 
-          {CONTINENT_PATHS.map(c => (
-            <path key={c.name} d={c.d} fill={CONTINENT_FILL} stroke={CONTINENT_LINE} strokeWidth={1.25} strokeLinejoin="round" />
-          ))}
-
-          <path d={BRAZIL_PATH} fill={CONTINENT_FILL} stroke={BTN_ACTIVE_BG} strokeWidth={1.25} strokeOpacity={0.6} strokeLinejoin="round" />
-          <text x={BRAZIL_LABEL.x} y={BRAZIL_LABEL.y} textAnchor="middle" fill={BTN_ACTIVE_BG}
-            fontSize={6.5} fontWeight={700} fontFamily={FONT} letterSpacing={0.8}>
-            BRAZIL
-          </text>
+          <Marker coordinates={BRAZIL_LATLON}>
+            <text textAnchor="middle" y={-10} fill={BTN_ACTIVE_BG}
+              fontSize={6.5} fontWeight={700} fontFamily={FONT} letterSpacing={0.8}>
+              BRAZIL
+            </text>
+          </Marker>
 
           {!loading && !errorMsg && activeDataset && countries.map(country => {
             const scores = activeDataset[country];
@@ -302,33 +310,34 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
             const isHov      = hovered === country;
 
             return (
-              <g
-                key={country}
-                onClick={() => setSelected(country)}
-                onMouseEnter={e => handleMarkerEnter(e, country)}
-                onMouseMove={handleMarkerMove}
-                onMouseLeave={() => { setHovered(null); setTooltipVisible(false); }}
-                style={{ cursor: 'pointer' }}
-              >
-                <circle cx={coord.x} cy={coord.y} r={8}
-                  fill={color} fillOpacity={0.88}
-                  stroke={isSelected ? BTN_ACTIVE_BG : isHov ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'}
-                  strokeWidth={isSelected ? 2 : 1.25}
-                />
-                <text x={coord.x} y={coord.y + 2.5} textAnchor="middle"
-                  fontSize={6.5} fontWeight={700} fill="rgba(0,0,0,0.65)"
-                  fontFamily={FONT}>{score}</text>
+              <Marker key={country} coordinates={coord}>
+                <g
+                  onClick={() => setSelected(country)}
+                  onMouseEnter={e => handleMarkerEnter(e, country)}
+                  onMouseMove={handleMarkerMove}
+                  onMouseLeave={() => { setHovered(null); setTooltipVisible(false); }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <circle r={8}
+                    fill={color} fillOpacity={0.88}
+                    stroke={isSelected ? BTN_ACTIVE_BG : isHov ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'}
+                    strokeWidth={isSelected ? 2 : 1.25}
+                  />
+                  <text y={2.5} textAnchor="middle"
+                    fontSize={6.5} fontWeight={700} fill="rgba(0,0,0,0.65)"
+                    fontFamily={FONT}>{score}</text>
 
-                {scores.tariff_alert && (
-                  <text x={coord.x + 8} y={coord.y - 8} textAnchor="middle" fontSize={9}
-                    style={{ animation: 'os-global-pulse 1.2s ease-in-out infinite', transformOrigin: `${coord.x + 8}px ${coord.y - 8}px` }}>
-                    ⚠️
-                  </text>
-                )}
-              </g>
+                  {scores.tariff_alert && (
+                    <text x={8} y={-8} textAnchor="middle" fontSize={9}
+                      style={{ animation: 'os-global-pulse 1.2s ease-in-out infinite', transformOrigin: '8px -8px' }}>
+                      ⚠️
+                    </text>
+                  )}
+                </g>
+              </Marker>
             );
           })}
-        </svg>
+        </ComposableMap>
 
         {/* Loading / error / empty states */}
         {(loading || errorMsg || (!loading && countries.length === 0)) && (
