@@ -447,7 +447,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                 cursor: 'pointer', marginBottom: -1, transition: 'color 0.15s',
               }}
             >
-              {tab === 'analysis' ? t('analysis_tab') : tab === 'map' ? t('map_tab') : tab === 'global' ? t('global_tab') : t('ai_tab')}
+              {tab === 'analysis' ? t('tab_analysis') : tab === 'map' ? t('tab_map') : tab === 'global' ? t('tab_global') : t('tab_ai')}
             </button>
           ))}
 
