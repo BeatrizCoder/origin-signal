@@ -653,7 +653,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                         <Eyebrow>⬢ {t('hes_title')}</Eyebrow>
                         <Tooltip text={t('hes_tooltip')} position="right" />
                       </div>
-                      <h2 style={{ margin: '0 0 4px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Honeycomb Efficiency Score</h2>
+                      <h2 style={{ margin: '0 0 4px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>{t('hes_title')}</h2>
                       <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 20, fontFamily: FONT }}>
                         {hc.context_label} · {hc.trade_direction === 'import' ? 'Worldwide' : 'Brazil'}
                       </div>
@@ -733,7 +733,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   <RevealSection visible={revealedSections.has('propagation')}>
                     <div style={{ padding: '28px 0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <Eyebrow>Cellular Risk Propagation</Eyebrow>
+                        <Eyebrow>{t('propagation_title')}</Eyebrow>
                         <Tooltip text={t('propagation_tooltip')} position="right" />
                       </div>
                       <h2 style={{ margin: '0 0 20px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>{t('propagation_title')}</h2>

@@ -127,7 +127,7 @@ export default function AuditPathScreen({ onBack }: Props) {
   return (
     <div style={{ minHeight: '100vh', color: COLORS.textPrimary, fontFamily: FONT }}>
       <ScreenHeader
-        title={t('min_coverage_path')}
+        title={t('audit_path')}
         backLabel={t('back')}
         onBack={onBack}
         right={<LangToggle />}
