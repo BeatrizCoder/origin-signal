@@ -76,6 +76,11 @@ const HORIZON_OPTIONS: { value: Horizon; label: string }[] = [
   { value: '365', label: '1 year' },
 ];
 
+const QUERY_CHIPS = {
+  EN: ['Geopolitical risk', 'Phytosanitary requirements', 'Tariff optimization', 'EUDR compliance', 'Climate impact'],
+  PT: ['Risco geopolítico', 'Requisitos fitossanitários', 'Otimização tarifária', 'Conformidade EUDR', 'Impacto climático'],
+};
+
 function RadioPill<T extends string>({
   options, value, onChange,
 }: {
@@ -132,11 +137,25 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
   const [horizon,         setHorizon]         = useState<Horizon>('90');
   const [query,           setQuery]           = useState('');
   const [tradeDirection,  setTradeDirection]  = useState<TradeDirection>(initialTradeDirection ?? 'export');
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const isImport = tradeDirection === 'import';
   const destinationOptions   = DESTINATIONS.includes(destination) ? DESTINATIONS : [destination, ...DESTINATIONS];
   const importOriginOptions  = IMPORT_ORIGINS.includes(importOrigin) ? IMPORT_ORIGINS : [importOrigin, ...IMPORT_ORIGINS];
+
+  const origin = isImport ? importOrigin : 'Brazil';
+  const effDestination = isImport ? 'Brazil' : destination;
+
+  const getSubtitle = () => {
+    if (!origin && !effDestination) return 'TRADE RISK INTELLIGENCE';
+    const orig = origin ? origin.toUpperCase().slice(0, 3) : 'BR';
+    const dest = effDestination ? effDestination.toUpperCase().slice(0, 3) : '---';
+    return `TRADE RISK INTELLIGENCE · ${orig}→${dest}`;
+  };
+
+  function addQueryChip(text: string) {
+    setQuery(prev => (prev ? `${prev} ${text}` : text));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -175,7 +194,7 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
           <LangToggle />
         </div>
         <div style={{ fontSize: 12, letterSpacing: 2, color: COLORS.textSecondary, fontFamily: FONT, textTransform: 'uppercase' as const }}>
-          {t('subtitle')}
+          {getSubtitle()}
         </div>
       </div>
 
@@ -288,6 +307,25 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
             {t('query_label')}
             <span style={{ color: COLORS.textSecondary, fontWeight: 400, fontSize: 9.5, letterSpacing: 1, opacity: 0.7 }}>(OPTIONAL)</span>
           </label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
+            {QUERY_CHIPS[language].map(chip => (
+              <span
+                key={chip}
+                onClick={() => addQueryChip(chip)}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,144,10,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,144,10,0.1)'; }}
+                style={{
+                  background: 'rgba(212,144,10,0.1)',
+                  border: '1px solid rgba(212,144,10,0.25)',
+                  color: '#D4900A',
+                  fontSize: 10, padding: '2px 8px', borderRadius: 10,
+                  cursor: 'pointer', fontFamily: FONT,
+                }}
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
           <textarea
             value={query}
             onChange={e => setQuery(e.target.value)}

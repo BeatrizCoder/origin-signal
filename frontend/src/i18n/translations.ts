@@ -1,6 +1,5 @@
 export const translations = {
   EN: {
-    subtitle: 'TRADE RISK INTELLIGENCE · BR→EU',
     query_label: 'QUERY',
     query_placeholder: 'e.g. EUDR compliance for coffee exports from Cerrado Mineiro to Germany',
     commodity_label: 'COMMODITY',
@@ -161,7 +160,6 @@ export const translations = {
     overall_risk: 'Overall Risk',
   },
   PT: {
-    subtitle: 'INTELIGÊNCIA DE RISCO COMERCIAL · BR→UE',
     query_label: 'CONSULTA',
     query_placeholder: 'ex: conformidade EUDR para exportação de café do Cerrado Mineiro para a Alemanha',
     commodity_label: 'COMMODITY',
