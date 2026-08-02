@@ -6,6 +6,7 @@ import LangToggle from './LangToggle';
 import ScreenHeader from './ui/ScreenHeader';
 import Eyebrow from './ui/Eyebrow';
 import HexDivider from './ui/HexDivider';
+import Tooltip from './ui/Tooltip';
 import PillChip from './ui/PillChip';
 import { COLORS, FONT } from '../theme';
 
@@ -92,6 +93,7 @@ export default function ComparatorScreen({ onBack }: Props) {
         backLabel={t('back')}
         onBack={onBack}
         right={<LangToggle />}
+        titleTooltip={<Tooltip text={t('route_comparator_tooltip')} position="bottom" />}
       />
 
       <main style={{ padding: '24px 28px 60px', maxWidth: 1200, margin: '0 auto' }}>

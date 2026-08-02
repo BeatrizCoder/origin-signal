@@ -8,9 +8,10 @@ interface Props {
   backLabel: string;
   onBack: () => void;
   right?: ReactNode;
+  titleTooltip?: ReactNode;
 }
 
-export default function ScreenHeader({ title, icon = '⬢', backLabel, onBack, right }: Props) {
+export default function ScreenHeader({ title, icon = '⬢', backLabel, onBack, right, titleTooltip }: Props) {
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -24,6 +25,7 @@ export default function ScreenHeader({ title, icon = '⬢', backLabel, onBack, r
         }}>
           <span style={{ color: COLORS.amberBright }}>{icon}</span> {title}
         </span>
+        {titleTooltip}
       </div>
       {right && <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>{right}</div>}
     </div>

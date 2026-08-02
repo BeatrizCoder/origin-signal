@@ -14,6 +14,7 @@ import ProgressMeter from './ui/ProgressMeter';
 import BriefingBlock from './ui/BriefingBlock';
 import PipelineStrip from './ui/PipelineStrip';
 import RevealSection from './ui/RevealSection';
+import Tooltip from './ui/Tooltip';
 import { COLORS, FONT, riskColor } from '../theme';
 
 type Tab = 'analysis' | 'map' | 'global' | 'ai';
@@ -111,6 +112,18 @@ const ACTION_BTN: React.CSSProperties = {
 
 function handleAmberHover(e: React.MouseEvent<HTMLButtonElement>, entering: boolean) {
   e.currentTarget.style.background = entering ? 'rgba(217,119,6,0.12)' : 'transparent';
+}
+
+const PRIMARY_ACTION_BTN: React.CSSProperties = {
+  ...ACTION_BTN,
+  background: COLORS.amberBright,
+  color: '#1A1204',
+  border: `1px solid ${COLORS.amberBright}`,
+  fontWeight: 700,
+};
+
+function handlePrimaryAmberHover(e: React.MouseEvent<HTMLButtonElement>, entering: boolean) {
+  e.currentTarget.style.opacity = entering ? '0.85' : '1';
 }
 
 function MetricCard({ label, value, unit, color, sub }: {
@@ -333,9 +346,6 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
         }}>
           <Logo size="sm" tagline="TRADE INTELLIGENCE" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-            <button onClick={onHistory} style={ACTION_BTN} onMouseEnter={e => handleAmberHover(e, true)} onMouseLeave={e => handleAmberHover(e, false)}>
-              <i className="fas fa-clock-rotate-left" /> {t('history')}
-            </button>
             <button onClick={onCompare} style={ACTION_BTN} onMouseEnter={e => handleAmberHover(e, true)} onMouseLeave={e => handleAmberHover(e, false)}>
               <i className="fas fa-right-left" /> {t('compare_routes')}
             </button>
@@ -345,59 +355,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
             <button onClick={onAuditPath} style={ACTION_BTN} onMouseEnter={e => handleAmberHover(e, true)} onMouseLeave={e => handleAmberHover(e, false)}>
               <i className="fas fa-route" /> {t('audit_path')}
             </button>
-            <button onClick={onNewAnalysis} style={ACTION_BTN} onMouseEnter={e => handleAmberHover(e, true)} onMouseLeave={e => handleAmberHover(e, false)}>
-              <i className="fas fa-compass" /> {t('new_analysis')}
-            </button>
           </div>
-        </div>
-
-        {/* Export buttons */}
-        <div style={{
-          padding: '10px 18px',
-          borderBottom: `1px solid ${COLORS.line}`,
-          display: 'flex', gap: 8, flexShrink: 0,
-        }}>
-          {(['pdf', 'excel'] as const).map(fmt => (
-            <button
-              key={fmt}
-              onClick={() => handleExport(fmt)}
-              disabled={downloading !== null}
-              style={{
-                flex: 1,
-                background: 'none',
-                border: `1px solid ${downloading === fmt ? COLORS.line : `${COLORS.amber}66`}`,
-                borderRadius: 6,
-                color: downloading === fmt ? COLORS.textSecondary : COLORS.amberBright,
-                padding: '6px 8px',
-                cursor: downloading !== null ? 'not-allowed' : 'pointer',
-                fontSize: 11,
-                fontFamily: FONT,
-                letterSpacing: 0.3,
-                opacity: downloading !== null && downloading !== fmt ? 0.45 : 1,
-                transition: 'all 0.15s',
-              }}
-            >
-              {downloading === fmt ? t('generating') : fmt === 'pdf' ? t('export_pdf') : t('export_excel')}
-            </button>
-          ))}
-          <button
-            onClick={handleShare}
-            style={{
-              flex: 1,
-              background: 'none',
-              border: `1px solid ${COLORS.amber}66`,
-              borderRadius: 6,
-              color: COLORS.amberBright,
-              padding: '6px 8px',
-              cursor: 'pointer',
-              fontSize: 11,
-              fontFamily: FONT,
-              letterSpacing: 0.3,
-              transition: 'all 0.15s',
-            }}
-          >
-            {linkCopied ? t('link_copied') : `🔗 ${t('share')}`}
-          </button>
         </div>
 
         {/* Scrollable sidebar body */}
@@ -452,7 +410,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
           {/* Intelligence Hive */}
           <div>
-            <Eyebrow>{t('agent_pipeline')}</Eyebrow>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Eyebrow>{t('agent_pipeline')}</Eyebrow>
+              <Tooltip text={t('agent_pipeline_tooltip')} position="right" />
+            </div>
             <div style={{ marginTop: 10 }}>
               <PipelineStrip steps={PIPELINE_STEPS} activeCount={pipelineActive} justify="flex-start" />
             </div>
@@ -508,6 +469,49 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               {commodity.toUpperCase()} · {isImport ? `${origin.toUpperCase()} → BRAZIL` : `BRAZIL → ${destination.toUpperCase()}`} · {horizon} DAYS
               {isImport && <span style={{ color: COLORS.amberBright, marginLeft: 8 }}>· IMPORT</span>}
             </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['pdf', 'excel'] as const).map(fmt => (
+                <button
+                  key={fmt}
+                  onClick={() => handleExport(fmt)}
+                  disabled={downloading !== null}
+                  style={{
+                    flex: 1,
+                    background: 'none',
+                    border: `1px solid ${downloading === fmt ? COLORS.line : `${COLORS.amber}66`}`,
+                    borderRadius: 6,
+                    color: downloading === fmt ? COLORS.textSecondary : COLORS.amberBright,
+                    padding: '6px 8px',
+                    cursor: downloading !== null ? 'not-allowed' : 'pointer',
+                    fontSize: 11,
+                    fontFamily: FONT,
+                    letterSpacing: 0.3,
+                    opacity: downloading !== null && downloading !== fmt ? 0.45 : 1,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {downloading === fmt ? t('generating') : fmt === 'pdf' ? t('export_pdf') : t('export_excel')}
+                </button>
+              ))}
+              <button
+                onClick={handleShare}
+                style={{
+                  flex: 1,
+                  background: 'none',
+                  border: `1px solid ${COLORS.amber}66`,
+                  borderRadius: 6,
+                  color: COLORS.amberBright,
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontFamily: FONT,
+                  letterSpacing: 0.3,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {linkCopied ? t('link_copied') : `🔗 ${t('share')}`}
+              </button>
+            </div>
             <LangToggle />
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
@@ -517,6 +521,20 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
               display: 'flex', alignItems: 'center', gap: 5,
             }}><span className="fa-solid fa-circle" style={{ fontSize: 6 }} /> 6 AGENTS ACTIVE</span>
           </div>
+        </div>
+
+        {/* New Analysis / History nav bar */}
+        <div style={{
+          padding: '10px 28px',
+          borderBottom: `1px solid ${COLORS.line}`,
+          display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+        }}>
+          <button onClick={onNewAnalysis} style={PRIMARY_ACTION_BTN} onMouseEnter={e => handlePrimaryAmberHover(e, true)} onMouseLeave={e => handlePrimaryAmberHover(e, false)}>
+            <i className="fas fa-compass" /> {t('new_analysis')}
+          </button>
+          <button onClick={onHistory} style={ACTION_BTN} onMouseEnter={e => handleAmberHover(e, true)} onMouseLeave={e => handleAmberHover(e, false)}>
+            <i className="fas fa-clock-rotate-left" /> {t('history')}
+          </button>
         </div>
 
         {/* Scrollable content */}
@@ -633,12 +651,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                     <div style={{ padding: '28px 0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <Eyebrow>⬢ {t('hes_title')}</Eyebrow>
-                        <span title={t('hes_tooltip')} style={{
-                          fontSize: 10, color: COLORS.textSecondary, cursor: 'help',
-                          border: `1px solid ${COLORS.line}`, borderRadius: '50%',
-                          width: 14, height: 14, display: 'inline-flex',
-                          alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        }}>?</span>
+                        <Tooltip text={t('hes_tooltip')} position="right" />
                       </div>
                       <h2 style={{ margin: '0 0 4px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>Honeycomb Efficiency Score</h2>
                       <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 20, fontFamily: FONT }}>
@@ -721,12 +734,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                     <div style={{ padding: '28px 0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <Eyebrow>Cellular Risk Propagation</Eyebrow>
-                        <span title={t('propagation_tooltip')} style={{
-                          fontSize: 10, color: COLORS.textSecondary, cursor: 'help',
-                          border: `1px solid ${COLORS.line}`, borderRadius: '50%',
-                          width: 14, height: 14, display: 'inline-flex',
-                          alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                        }}>?</span>
+                        <Tooltip text={t('propagation_tooltip')} position="right" />
                       </div>
                       <h2 style={{ margin: '0 0 20px 0', fontSize: 19, fontWeight: 700, color: COLORS.textPrimary, fontFamily: FONT }}>{t('propagation_title')}</h2>
 
@@ -824,7 +832,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   <HexDivider />
                   <RevealSection visible={revealedSections.has('tariff')}>
                   <div style={{ padding: '28px 0' }}>
-                    <Eyebrow>{t('tariff_calculation')}</Eyebrow>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Eyebrow>{t('tariff_calculation')}</Eyebrow>
+                      <Tooltip text={t('tariff_calculation_tooltip')} position="right" />
+                    </div>
                     <div style={{ ...CARD, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <div style={{ fontSize: 13, color: COLORS.textPrimary, fontFamily: FONT }}>
@@ -920,7 +931,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   }
                 `}</style>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <Eyebrow>⬢ {t('regulatory_alerts')}</Eyebrow>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Eyebrow>⬢ {t('regulatory_alerts')}</Eyebrow>
+                    <Tooltip text={t('regulatory_alerts_tooltip')} position="right" />
+                  </div>
                   {result.alerts && result.alerts.alerts.length > 0 ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{
@@ -994,7 +1008,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                   <>
                     {/* Pipeline Overview */}
                     <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      <Eyebrow>{t('pipeline_overview')}</Eyebrow>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Eyebrow>{t('pipeline_overview')}</Eyebrow>
+                        <Tooltip text={t('ai_observability_tooltip')} position="right" />
+                      </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                         <div>
                           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('total_duration')}</div>

@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
 import ScreenHeader from './ui/ScreenHeader';
 import Eyebrow from './ui/Eyebrow';
+import Tooltip from './ui/Tooltip';
 import { COLORS, FONT, riskColor } from '../theme';
 
 const REGIONS = [
@@ -130,6 +131,7 @@ export default function AuditPathScreen({ onBack }: Props) {
         backLabel={t('back')}
         onBack={onBack}
         right={<LangToggle />}
+        titleTooltip={<Tooltip text={t('min_coverage_path_tooltip')} position="bottom" />}
       />
 
       <main style={{ padding: '24px 28px 60px', maxWidth: 1100, margin: '0 auto' }}>

@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
 import ScreenHeader from './ui/ScreenHeader';
 import Eyebrow from './ui/Eyebrow';
+import Tooltip from './ui/Tooltip';
 import { COLORS, FONT } from '../theme';
 
 const MIN_BUDGET  = 50_000;
@@ -91,6 +92,7 @@ export default function OptimizationScreen({ onBack, onAuditPath }: Props) {
         backLabel={t('back')}
         onBack={onBack}
         right={<LangToggle />}
+        titleTooltip={<Tooltip text={t('optimization_engine_tooltip')} position="bottom" />}
       />
 
       <main style={{ padding: '24px 28px 60px', maxWidth: 1100, margin: '0 auto' }}>
