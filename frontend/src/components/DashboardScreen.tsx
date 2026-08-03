@@ -749,7 +749,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                               <div key={m.region} style={{ display: 'flex', alignItems: 'flex-start' }}>
                                 <div style={{ textAlign: 'center', padding: '0 22px', maxWidth: 140 }}>
                                   <div style={{ width: 14, height: 14, borderRadius: '50%', margin: '0 auto 10px', background: riskColor(m.composite_score) }} />
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.textPrimary, fontFamily: FONT }}>{m.region}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3, minHeight: 34, color: COLORS.textPrimary, fontFamily: FONT }}>{m.region}</div>
                                   <div style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: 2, fontFamily: FONT }}>{m.composite_score}</div>
                                   {m.risk_sources.length > 0 && (
                                     <div style={{ fontSize: 9.5, color: COLORS.textSecondary, marginTop: 4, lineHeight: 1.4, fontFamily: FONT }}>
