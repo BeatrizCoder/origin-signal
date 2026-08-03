@@ -333,6 +333,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
+                    tabIndex={-1}
                     fill={CONTINENT_FILL}
                     stroke={isBrazil ? BTN_ACTIVE_BG : CONTINENT_LINE}
                     strokeWidth={isBrazil ? 1.25 : 0.6}
