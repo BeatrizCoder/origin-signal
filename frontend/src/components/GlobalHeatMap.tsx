@@ -1,6 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 import worldAtlas from 'world-atlas/countries-110m.json';
+// Only the 23 flags actually used are imported — pulling in flag-icons' full CSS
+// would bundle all ~250 flag SVGs into the build.
+import flagBr from 'flag-icons/flags/4x3/br.svg';
+import flagEu from 'flag-icons/flags/4x3/eu.svg';
+import flagDe from 'flag-icons/flags/4x3/de.svg';
+import flagNl from 'flag-icons/flags/4x3/nl.svg';
+import flagFr from 'flag-icons/flags/4x3/fr.svg';
+import flagNo from 'flag-icons/flags/4x3/no.svg';
+import flagCh from 'flag-icons/flags/4x3/ch.svg';
+import flagGb from 'flag-icons/flags/4x3/gb.svg';
+import flagUs from 'flag-icons/flags/4x3/us.svg';
+import flagMx from 'flag-icons/flags/4x3/mx.svg';
+import flagCn from 'flag-icons/flags/4x3/cn.svg';
+import flagJp from 'flag-icons/flags/4x3/jp.svg';
+import flagKr from 'flag-icons/flags/4x3/kr.svg';
+import flagVn from 'flag-icons/flags/4x3/vn.svg';
+import flagSa from 'flag-icons/flags/4x3/sa.svg';
+import flagAe from 'flag-icons/flags/4x3/ae.svg';
+import flagAr from 'flag-icons/flags/4x3/ar.svg';
+import flagCo from 'flag-icons/flags/4x3/co.svg';
+import flagCl from 'flag-icons/flags/4x3/cl.svg';
+import flagUy from 'flag-icons/flags/4x3/uy.svg';
+import flagPy from 'flag-icons/flags/4x3/py.svg';
+import flagPe from 'flag-icons/flags/4x3/pe.svg';
+import flagEt from 'flag-icons/flags/4x3/et.svg';
 import { getGlobalRisk } from '../services/api';
 import type { CountryRiskScores, GlobalRiskResponse } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -106,6 +131,35 @@ const COUNTRY_REGION: Record<string, string> = {
   Uruguay: 'S.America', Paraguay: 'S.America', Peru: 'S.America',
   Ethiopia: 'Africa',
 };
+
+// flag-icons SVGs (imported individually above) keyed by country name —
+// 'European Union' isn't a country, but flag-icons ships an 'eu' flag for exactly this case.
+const COUNTRY_FLAG: Record<string, string> = {
+  Brazil: flagBr,
+  'European Union': flagEu, Germany: flagDe, Netherlands: flagNl, France: flagFr,
+  Norway: flagNo, Switzerland: flagCh, 'United Kingdom': flagGb,
+  'United States': flagUs, Mexico: flagMx,
+  China: flagCn, Japan: flagJp, 'South Korea': flagKr, Vietnam: flagVn,
+  'Saudi Arabia': flagSa, UAE: flagAe,
+  Argentina: flagAr, Colombia: flagCo, Chile: flagCl,
+  Uruguay: flagUy, Paraguay: flagPy, Peru: flagPe,
+  Ethiopia: flagEt,
+};
+
+function Flag({ country, size = 14 }: { country: string; size?: number }) {
+  const url = COUNTRY_FLAG[country];
+  if (!url) return null;
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: size * 1.333333, height: size, flexShrink: 0, borderRadius: 2,
+        backgroundImage: `url("${url}")`, backgroundSize: 'cover', backgroundPosition: 'center',
+        boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
+      }}
+    />
+  );
+}
 
 const BRAZIL_LATLON: LatLon = [-51.9253, -14.2350];
 
@@ -362,9 +416,13 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
             boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
           }}>
             <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
               fontSize: 11, fontWeight: 700, color: TEXT, letterSpacing: 0.5,
               fontFamily: FONT, marginBottom: 6, textTransform: 'uppercase' as const,
-            }}>{hovered}</div>
+            }}>
+              <Flag country={hovered} />
+              {hovered}
+            </div>
             {([['regulatory', hoveredScores.regulatory], ['climate', hoveredScores.climate], ['market', hoveredScores.market], ['logistics', hoveredScores.logistics], ['overall_risk', hoveredScores.overall]] as const).map(([key, val]) => (
               <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10, color: TEXT_MUTED, fontFamily: FONT, marginBottom: 2 }}>
                 <span style={{ textTransform: 'uppercase' as const }}>{t(key)}</span>
@@ -402,9 +460,13 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
             <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
               <div style={{ flexShrink: 0 }}>
                 <div style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
                   fontSize: 12, fontWeight: 700, letterSpacing: 0.8, color: TEXT,
                   fontFamily: FONT, textTransform: 'uppercase' as const, marginBottom: 4,
-                }}>{selected}</div>
+                }}>
+                  <Flag country={selected} size={15} />
+                  {selected}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ fontFamily: FONT, fontSize: 28, fontWeight: 800, color: BTN_ACTIVE_BG, lineHeight: 1 }}>
                     {selectedScores.overall}
@@ -507,6 +569,7 @@ export default function GlobalHeatMap({ commodity, tradeDirection = 'export', on
                 }}
               >
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <Flag country={name} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: 12.5, fontWeight: 600, color: TEXT, fontFamily: FONT,
