@@ -6,6 +6,15 @@ OriginSignal is a multi-agent AI platform for trade risk intelligence — built 
 
 ---
 
+## Screenshots
+
+![Landing](docs/screenshots/landing.png)
+![Dashboard](docs/screenshots/dashboard.png)
+![Hive Map](docs/screenshots/map-hive.png)
+![World Risk](docs/screenshots/world-risk.png)
+
+---
+
 ## The Problem
 
 When someone needs to analyze a trade route, they open five different sources:
