@@ -1,6 +1,5 @@
 # OriginSignal — Trade Risk Intelligence Platform
 
-> *"O Siscomex é onde você declara. O OriginSignal é onde você decide se deve declarar."*
 
 OriginSignal is a multi-agent AI platform for trade risk intelligence — built for Brazilian exporters and importers who need to make decisions about international trade routes, regulatory compliance, and supply chain risk.
 
