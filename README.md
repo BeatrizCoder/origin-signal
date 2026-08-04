@@ -8,10 +8,21 @@ OriginSignal is a multi-agent AI platform for trade risk intelligence — built 
 
 ## Screenshots
 
+### Landing — Trade scenario input
 ![Landing](docs/screenshots/landing.png)
+*The user describes a trade scenario in natural language*
+
+### Dashboard — Executive Memorandum
 ![Dashboard](docs/screenshots/dashboard.png)
-![Hive Map](docs/screenshots/map-hive.png)
+*Structured executive briefing with risk priorities and recommended actions*
+
+### Hive — Hexagonal risk map
+![Hive](docs/screenshots/hive.png)
+*Brazilian producing regions as hexagonal cells — Honeycomb Conjecture applied*
+
+### World Risk — Global heat map
 ![World Risk](docs/screenshots/world-risk.png)
+*Worldwide country risk scores for export destinations and import origins*
 
 ---
 
@@ -32,32 +43,7 @@ OriginSignal connects all of it — in about 30 seconds.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                React + TypeScript Frontend               │
-│   Landing → Processing Animation → Strategic Dashboard  │
-└─────────────────────┬───────────────────────────────────┘
-                      │ REST API
-┌─────────────────────▼───────────────────────────────────┐
-│                   FastAPI Backend                        │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │         6 Intelligence Agents (parallel)          │  │
-│  │                                                   │  │
-│  │  🌦 Climate Intelligence   → Open-Meteo API       │  │
-│  │  ⚖  Regulatory Intelligence → RAG + Claude Haiku │  │
-│  │  📈 Market Intelligence    → USDA FAS PSD         │  │
-│  │  🚢 Logistics Intelligence → ANTAQ + DHL Index    │  │
-│  │  🐝 Due Diligence Engine   → Honeycomb algorithms │  │
-│  │  🧠 Executive AI Synthesis → Claude Sonnet 4.6   │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌───────────────┐  │
-│  │  ChromaDB   │  │   MongoDB   │  │  RAG Engine   │  │
-│  │  (vectors)  │  │  (history)  │  │  465 chunks   │  │
-│  └─────────────┘  └─────────────┘  └───────────────┘  │
-└─────────────────────────────────────────────────────────┘
-```
+![Architecture](docs/architecture.png)
 
 ### Key Technical Decisions
 
