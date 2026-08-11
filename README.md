@@ -278,6 +278,47 @@ The architecture is fully pluggable — production deployment would connect to E
 
 ---
 
+## Validation
+
+### Deterministic calculation layer
+Risk scores, tariff calculations and Honeycomb optimization algorithms
+are implemented independently of the LLM layer and validated against:
+
+**Invariant tests** — properties that must always hold:
+- Risk scores bounded to [0, 100]
+- Portfolio weights sum to exactly 1.0 (export: 30/25/20/15/10, import: 25/20/15/15/15/10)
+- Landed cost always ≥ CIF value
+- All tax components ≥ 0
+- Larger optimization budget never produces lower HES coverage
+
+**Reference scenarios** — golden dataset with expected outputs:
+| Scenario | II Reduction | Tax Burden |
+|----------|-------------|------------|
+| Coffee import - Argentina (Mercosul) | 100% | ~33.7% |
+| Coffee import - Colombia (ACE 59) | 50% | ~40.4% |
+| Coffee import - USA/China/EU (WTO/MFN) | 0% | ~47.1% |
+| Soybeans import - Argentina (Mercosul) | 100% | ~33.7% |
+
+Note: tax burden stays well above the II reduction rate because PIS/COFINS
+and ICMS (calculated on a gross-up base that includes II) apply regardless
+of trade agreement — a 100% II exemption does not mean a 100% tax exemption.
+
+### Regulatory and tariff assumptions
+Trade agreement reduction rates (Mercosul, ACE 59, WTO/MFN) are
+configuration data, not model parameters. They must be periodically
+validated against official CAMEX/MDIC publications.
+
+### Scope of validation
+This project distinguishes between:
+- **Calculation errors** — caught by deterministic tests
+- **Data quality issues** — flagged in Data Transparency section
+- **Modeling assumptions** — documented (risk weights, regional volumes)
+
+The LLM layer synthesizes pre-calculated values. It does not perform
+any arithmetic — eliminating a class of hallucination risk entirely.
+
+---
+
 ## Roadmap
 
 ### V2
