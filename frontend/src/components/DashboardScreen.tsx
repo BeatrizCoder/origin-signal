@@ -1080,6 +1080,11 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                     {ragChunks && ragChunks.length > 0 && (
                       <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
                         <Eyebrow>{t('rag_evidence')} — {ragChunks.length} {t('chunks_retrieved')}</Eyebrow>
+                        {tradeDirection === 'import' && (
+                          <div style={{ fontSize: 11.5, color: COLORS.textSecondary, lineHeight: 1.55, fontFamily: FONT }}>
+                            {t('rag_import_note')}
+                          </div>
+                        )}
                         {ragChunks.map((chunk, i) => (
                           <div key={i} style={{
                             display: 'flex', flexDirection: 'column', gap: 6,
@@ -1087,8 +1092,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                             paddingTop: i > 0 ? 12 : 0,
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.amberBright, fontFamily: FONT }}>{chunk.article || 'EUDR 2023/1115'}</span>
-                              <span style={{ fontSize: 10.5, color: COLORS.textSecondary, fontFamily: FONT }}>{chunk.source}</span>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.amberBright, fontFamily: FONT }}>{chunk.source}</span>
+                              {chunk.article && (
+                                <span style={{ fontSize: 10.5, color: COLORS.textSecondary, fontFamily: FONT }}>{chunk.article}</span>
+                              )}
                             </div>
                             <div style={{ fontSize: 12.5, color: COLORS.textPrimary, lineHeight: 1.6, fontFamily: FONT }}>{chunk.text}…</div>
                             <ProgressMeter value={chunk.score} color={COLORS.amberBright} />
