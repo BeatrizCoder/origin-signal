@@ -2,16 +2,18 @@ import asyncio
 import time
 from datetime import datetime
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel
 
 from app.agents.alerts_agent import AlertsAgent
 from app.agents.climate_agent import ClimateAgent, COUNTRY_COORDS, REGION_COORDS
+from app.agents.data_quality_agent import DataQualityAgent
 from app.agents.executive_agent import ExecutiveAgent
 from app.agents.gap_agent import GapAgent, REGION_ADJACENCY, REGION_RISK_SCORES, calculate_hes, calculate_propagation
 from app.agents.logistics_agent import LogisticsAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.regulatory_agent import RegulatoryAgent
+from app.agents.regulatory_research_agent import RegulatoryResearchAgent
 from app.agents.tariff_agent import TariffAgent
 from app.db.mongodb import save_analysis, get_analyses, get_analysis_by_id
 from app.utils.excel_generator import generate_excel
@@ -27,6 +29,8 @@ _gap        = GapAgent()
 _tariff     = TariffAgent()
 _alerts     = AlertsAgent()
 _executive  = ExecutiveAgent()
+_dq         = DataQualityAgent()
+_research   = RegulatoryResearchAgent()
 
 _EMPTY_TARIFF = {
     "tariff_risk_score": 0,
@@ -80,14 +84,32 @@ async def health():
 async def analyze(body: AnalyzeRequest) -> dict:
     is_import = body.trade_direction == "import"
 
+    # STEP 0 — Data Quality (before the pipeline runs at all)
+    quality_check = _dq.validate(body.model_dump())
+    if not quality_check["valid"]:
+        raise HTTPException(status_code=422, detail={
+            "message": "Input validation failed",
+            "issues": quality_check["issues"],
+            "warnings": quality_check["warnings"],
+        })
+
     # For import: analyze climate at origin country; for export: analyze Brazilian origin region
     climate_location = body.origin if is_import else body.origin_region
 
     pipeline_start_dt = datetime.utcnow()
 
+    # STEP 0.5 — Autonomous Regulatory Research, runs alongside Phase 1
+    research_task = _timed(_research.research(
+        origin=body.origin,
+        destination=body.destination,
+        commodity=body.commodity,
+        trade_direction=body.trade_direction,
+    ))
+
     # Phase 1: independent agents in parallel (+ tariff when importing)
     if is_import:
-        (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (tariff, tariff_ms), (alerts, alerts_ms) = await asyncio.gather(
+        (research_result, research_ms), (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (tariff, tariff_ms), (alerts, alerts_ms) = await asyncio.gather(
+            research_task,
             _timed(asyncio.to_thread(
                 _regulatory.analyze,
                 body.query, body.commodity, body.origin, body.destination, body.trade_direction,
@@ -99,7 +121,8 @@ async def analyze(body: AnalyzeRequest) -> dict:
             _timed(_alerts.analyze(body.commodity, body.destination, body.origin)),
         )
     else:
-        (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (alerts, alerts_ms) = await asyncio.gather(
+        (research_result, research_ms), (reg, reg_ms), (clim, clim_ms), (mkt, mkt_ms), (logi, logi_ms), (alerts, alerts_ms) = await asyncio.gather(
+            research_task,
             _timed(asyncio.to_thread(
                 _regulatory.analyze,
                 body.query, body.commodity, body.origin, body.destination, body.trade_direction,
@@ -291,6 +314,8 @@ async def analyze(body: AnalyzeRequest) -> dict:
         "propagation":        propagation,
         "executive":          executive,
         "observability":      observability,
+        "regulatory_research": research_result,
+        "data_quality":       quality_check,
         "overall_risk_score": overall,
         "export_readiness":   100 - overall,
         "supply_reliability": 100 - overall,

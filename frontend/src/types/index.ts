@@ -177,6 +177,44 @@ export interface AlertsResult {
   insight: string;
 }
 
+export interface RegulatoryEvidence {
+  relevant: boolean;
+  source: string;
+  type: string;
+  data?: unknown;
+  confidence: number;
+  relevance_score: number;
+  note?: string;
+  error?: string;
+}
+
+export interface RegulatoryResearchResult {
+  origin: string;
+  destination: string;
+  commodity: string;
+  evidence: RegulatoryEvidence[];
+  sources_checked: string[];
+  has_rag: boolean;
+  research_confidence: number;
+  regulatory_context: string;
+  timestamp: string;
+}
+
+export interface DataQualityResult {
+  valid: boolean;
+  issues: string[];
+  warnings: string[];
+  quality_score: number;
+  payload_summary: {
+    commodity: string;
+    direction: string;
+    origin: string;
+    destination: string;
+    time_horizon: string;
+    cif_value: number;
+  };
+}
+
 export interface AnalyzeResponse {
   regulatory: RegulationResult;
   climate: ClimateResult;
@@ -189,6 +227,8 @@ export interface AnalyzeResponse {
   propagation?: PropagationData;
   executive: ExecutiveResult;
   observability?: ObservabilityData;
+  regulatory_research?: RegulatoryResearchResult;
+  data_quality?: DataQualityResult;
   overall_risk_score: number;
   export_readiness: number;
   supply_reliability?: number;

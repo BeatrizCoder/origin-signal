@@ -1117,6 +1117,87 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                       </div>
                     </div>
 
+                    {/* Autonomous Research */}
+                    {result.regulatory_research && (() => {
+                      const research = result.regulatory_research;
+                      return (
+                        <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <Eyebrow>{t('autonomous_research')}</Eyebrow>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('sources_checked')}</div>
+                              <div style={{ fontSize: 13, color: COLORS.textPrimary, fontFamily: FONT }}>{research.sources_checked.join(', ')}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('research_confidence')}</div>
+                              <div style={{ fontFamily: FONT, fontSize: 18, fontWeight: 800, color: confidenceColor(research.research_confidence * 100) }}>
+                                {Math.round(research.research_confidence * 100)}%
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ fontSize: 11.5, color: research.has_rag ? COLORS.petroleo : COLORS.amberBright, fontFamily: FONT, fontWeight: 700 }}>
+                            {research.has_rag ? t('has_rag_yes') : t('has_rag_no')}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 8 }}>
+                              {t('evidence_found')} — {research.evidence.length}
+                            </div>
+                            {research.evidence.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {research.evidence.map((e, i) => (
+                                  <div key={i} style={{
+                                    borderTop: i > 0 ? `1px solid ${COLORS.line}` : 'none',
+                                    paddingTop: i > 0 ? 10 : 0,
+                                    display: 'flex', flexDirection: 'column', gap: 4,
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                      <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.amberBright, fontFamily: FONT }}>{e.source}</span>
+                                      <span style={{ fontSize: 10.5, color: COLORS.textSecondary, fontFamily: FONT }}>{Math.round(e.relevance_score * 100)}%</span>
+                                    </div>
+                                    {e.note && <div style={{ fontSize: 12, color: COLORS.textPrimary, lineHeight: 1.55, fontFamily: FONT }}>{e.note}</div>}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT }}>{t('no_evidence_found')}</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Data Quality */}
+                    {result.data_quality && (() => {
+                      const dq = result.data_quality;
+                      const dqColor = dq.quality_score >= 0.8 ? COLORS.petroleo : dq.quality_score >= 0.5 ? COLORS.amberBright : COLORS.danger;
+                      return (
+                        <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <Eyebrow>{t('data_quality')}</Eyebrow>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontSize: 10.5, color: COLORS.textSecondary, fontFamily: FONT }}>{t('quality_score')}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 700, color: dqColor, fontFamily: FONT }}>{dq.quality_score.toFixed(1)}</span>
+                            </div>
+                            <ProgressMeter value={dq.quality_score * 100} color={dqColor} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 8 }}>{t('quality_warnings')}</div>
+                            {dq.warnings.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {dq.warnings.map((w, i) => (
+                                  <div key={i} style={{ fontSize: 12, color: COLORS.textPrimary, lineHeight: 1.55, fontFamily: FONT, display: 'flex', gap: 6 }}>
+                                    <span style={{ color: COLORS.amberBright, flexShrink: 0 }}>⬢</span>{w}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT }}>{t('no_quality_warnings')}</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Decision Trace */}
                     <div style={CALLOUT}>
                       <span style={{ color: COLORS.amberBright, flexShrink: 0 }}>⬢</span>
