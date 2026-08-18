@@ -183,9 +183,15 @@ export interface RegulatoryEvidence {
   type: string;
   data?: unknown;
   confidence: number;
-  relevance_score: number;
+  relevance_score?: number;
   note?: string;
   error?: string;
+}
+
+export interface ToolCallLogEntry {
+  tool: string;
+  input: Record<string, unknown>;
+  result_preview: string;
 }
 
 export interface RegulatoryResearchResult {
@@ -193,10 +199,13 @@ export interface RegulatoryResearchResult {
   destination: string;
   commodity: string;
   evidence: RegulatoryEvidence[];
-  sources_checked: string[];
+  tool_calls: ToolCallLogEntry[];
+  tools_used: string[];
+  iterations: number;
   has_rag: boolean;
   research_confidence: number;
   regulatory_context: string;
+  is_autonomous?: boolean;
   timestamp: string;
 }
 

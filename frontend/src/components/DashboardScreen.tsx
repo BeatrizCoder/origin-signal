@@ -179,6 +179,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const [pipelineActive, setPipelineActive] = useState(0);
   const [revealedSections, setRevealedSections] = useState<Set<string>>(new Set());
   const [linkCopied, setLinkCopied] = useState(false);
+  const [expandedToolCalls, setExpandedToolCalls] = useState<Set<number>>(new Set());
   const { t } = useLanguage();
   const isImport = tradeDirection === 'import';
 
@@ -1129,11 +1130,25 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                       const research = result.regulatory_research;
                       return (
                         <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                          <Eyebrow>{t('autonomous_research')}</Eyebrow>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <Eyebrow>{t('autonomous_research')}</Eyebrow>
+                            {research.is_autonomous && (
+                              <span style={{
+                                fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
+                                fontFamily: FONT, color: COLORS.petroleo, background: 'rgba(15,118,110,0.16)',
+                                padding: '3px 9px', borderRadius: 20,
+                                display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+                              }}><span className="fa-solid fa-circle" style={{ fontSize: 5 }} /> {t('tool_use_badge')}</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                             <div>
-                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('sources_checked')}</div>
-                              <div style={{ fontSize: 13, color: COLORS.textPrimary, fontFamily: FONT }}>{research.sources_checked.join(', ')}</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('tools_used')}</div>
+                              <div style={{ fontSize: 13, color: COLORS.textPrimary, fontFamily: FONT }}>{research.tools_used.length > 0 ? research.tools_used.join(', ') : '—'}</div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('iterations')}</div>
+                              <div style={{ fontSize: 13, color: COLORS.textPrimary, fontFamily: FONT }}>{research.iterations}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 4 }}>{t('research_confidence')}</div>
@@ -1147,26 +1162,47 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                           </div>
                           <div>
                             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: COLORS.textSecondary, fontFamily: FONT, marginBottom: 8 }}>
-                              {t('evidence_found')} — {research.evidence.length}
+                              {t('tool_calls')} — {research.tool_calls.length}
                             </div>
-                            {research.evidence.length > 0 ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {research.evidence.map((e, i) => (
-                                  <div key={i} style={{
-                                    borderTop: i > 0 ? `1px solid ${COLORS.line}` : 'none',
-                                    paddingTop: i > 0 ? 10 : 0,
-                                    display: 'flex', flexDirection: 'column', gap: 4,
-                                  }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                      <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.amberBright, fontFamily: FONT }}>{e.source}</span>
-                                      <span style={{ fontSize: 10.5, color: COLORS.textSecondary, fontFamily: FONT }}>{Math.round(e.relevance_score * 100)}%</span>
+                            {research.tool_calls.length > 0 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {research.tool_calls.map((call, i) => {
+                                  const isExpanded = expandedToolCalls.has(i);
+                                  return (
+                                    <div key={i} style={{
+                                      borderTop: i > 0 ? `1px solid ${COLORS.line}` : 'none',
+                                      paddingTop: i > 0 ? 8 : 0,
+                                    }}>
+                                      <div
+                                        onClick={() => setExpandedToolCalls(prev => {
+                                          const next = new Set(prev);
+                                          next.has(i) ? next.delete(i) : next.add(i);
+                                          return next;
+                                        })}
+                                        style={{
+                                          display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                                        }}
+                                      >
+                                        <span className="fa-solid fa-wrench" style={{ fontSize: 11, color: COLORS.amberBright }} />
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.amberBright, fontFamily: FONT, flex: 1 }}>{call.tool}</span>
+                                        <span className={`fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ fontSize: 9, color: COLORS.textSecondary }} />
+                                      </div>
+                                      {isExpanded && (
+                                        <div style={{ marginTop: 6, paddingLeft: 19, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                          <div style={{ fontSize: 11, color: COLORS.textSecondary, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                                            {JSON.stringify(call.input)}
+                                          </div>
+                                          <div style={{ fontSize: 12, color: COLORS.textPrimary, lineHeight: 1.55, fontFamily: FONT }}>
+                                            {call.result_preview}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
-                                    {e.note && <div style={{ fontSize: 12, color: COLORS.textPrimary, lineHeight: 1.55, fontFamily: FONT }}>{e.note}</div>}
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             ) : (
-                              <div style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT }}>{t('no_evidence_found')}</div>
+                              <div style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT }}>{research.regulatory_context || '—'}</div>
                             )}
                           </div>
                         </div>
