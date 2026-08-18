@@ -226,7 +226,7 @@ class ExecutiveAgent:
             "tax_guidance":     tax_guidance,
         }, indent=2, ensure_ascii=False)
 
-        model = "claude-haiku-4-5-20251001" if is_import else "claude-sonnet-4-6"
+        model = "claude-sonnet-4-6"
         response = None
         for attempt in range(2):
             response = self._client.messages.create(
@@ -239,6 +239,7 @@ class ExecutiveAgent:
                 parsed = parse_llm_json(response.content[0].text)
                 return {
                     **parsed,
+                    "actual_model": response.model,
                     "token_usage": {
                         "input": response.usage.input_tokens,
                         "output": response.usage.output_tokens,
@@ -249,6 +250,7 @@ class ExecutiveAgent:
                     fallback = _MOCK_IMPORT if is_import else _MOCK_EXPORT
                     return {
                         **fallback,
+                        "actual_model": response.model,
                         "token_usage": {
                             "input": response.usage.input_tokens,
                             "output": response.usage.output_tokens,

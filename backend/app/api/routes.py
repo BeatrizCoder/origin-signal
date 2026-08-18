@@ -230,7 +230,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
             },
             {
                 'name': 'Regulatory Intelligence',
-                'model': 'claude-haiku-4-5',
+                'model': reg.get('actual_model', 'claude-haiku-4-5'),
                 'status': 'completed',
                 'duration_ms': reg_ms,
                 'data_sources': ['EUR-Lex EUDR 2023/1115', 'ChromaDB Vector Store'],
@@ -284,7 +284,7 @@ async def analyze(body: AnalyzeRequest) -> dict:
             },
             {
                 'name': 'Executive AI Synthesis',
-                'model': 'claude-haiku-4-5-20251001' if is_import else 'claude-sonnet-4-6',
+                'model': executive.get('actual_model', 'claude-sonnet-4-6'),
                 'status': 'completed',
                 'duration_ms': exec_ms,
                 'data_sources': ['All 5 agent outputs'],

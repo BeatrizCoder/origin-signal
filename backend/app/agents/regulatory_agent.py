@@ -185,6 +185,7 @@ class RegulatoryAgent:
             except (json.JSONDecodeError, ValueError):
                 if attempt == 1:
                     fallback = self._mock_response(query, commodity, origin, destination, rag_evidence)
+                    fallback["actual_model"] = response.model
                     fallback["token_usage"] = {
                         "input": response.usage.input_tokens,
                         "output": response.usage.output_tokens,
@@ -200,6 +201,7 @@ class RegulatoryAgent:
             "origin": origin,
             "destination": destination,
             "rag_evidence": rag_evidence,
+            "actual_model": response.model,
             "token_usage": {
                 "input": response.usage.input_tokens,
                 "output": response.usage.output_tokens,
