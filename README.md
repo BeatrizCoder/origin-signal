@@ -58,6 +58,27 @@ The RAG pipeline only activates for EU-bound routes (where EUDR applies). Other 
 **Context injection for grounding:**
 Current date, calculated tax rates, and agent outputs are injected into the Executive Agent prompt. This prevents temporal hallucinations and ensures the narrative reflects the actual computed values.
 
+**Autonomous tool use for uncovered routes:**
+The Regulatory Research Agent uses real function calling (tool use) via Anthropic API. For countries without indexed RAG documents, the agent autonomously decides which tools to call, in what order, and when research is sufficient — genuine agentic behavior.
+
+---
+
+## Architecture Decisions
+
+| Component | Technique | Why |
+|-----------|-----------|-----|
+| Climate Intelligence | REST API + Python | Structured data — no LLM needed |
+| Logistics Intelligence | Python deterministic | Lookup tables — LLM adds no value |
+| Tariff Agent | Python deterministic | Math must be exact and testable |
+| Regulatory (EU/USA/China/LATAM) | RAG + Claude Haiku | Official docs — semantic search finds right article |
+| Regulatory Research Agent (other countries) | Autonomous Agent + Tool Use | Countries without RAG — agent decides sources autonomously |
+| Market Intelligence | Prompt + Python | USDA data processed in Python, LLM writes narrative |
+| Due Diligence + Honeycomb | Python deterministic | Mathematical algorithms — not interpretation problems |
+| Executive AI Synthesis | Claude Sonnet 4.6 | Narrates pre-calculated results — never computes numbers |
+| Orchestration | asyncio.gather | Deterministic parallel flow — not decided by LLM |
+
+Core principle: *"The LLM doesn't calculate any values. The calculation layer is deterministic Python. The AI receives pre-computed results and writes the executive synthesis. This enables distinguishing between calculation errors, data quality issues, and modeling assumptions."*
+
 ---
 
 ## The Honeycomb Conjecture — Applied
@@ -136,6 +157,10 @@ cd backend && python -m app.rag.ingest
 - RASFF (EU food safety alerts) integration
 
 ### Additional
+- Regulatory Research Agent with real tool use — autonomous research for countries without RAG coverage
+- Input Validation Engine — validates inputs before the pipeline runs
+- Explanatory tooltips across every feature
+- Persistent, shareable URL per analysis (React Router)
 - Export PDF + Excel reports
 - MongoDB analysis history with persistent URLs
 - EN/PT bilingual interface
@@ -149,6 +174,8 @@ cd backend && python -m app.rag.ingest
 |-----------|-----------|
 | API | FastAPI + Uvicorn |
 | AI Agents | Claude Haiku 4.5 (5 agents) + Claude Sonnet 4.6 (Executive) |
+| Regulatory Research | Autonomous Agent with tool use (search_wto, search_trade_agreement, search_sanitary_requirements, search_customs_authority, search_eurlex_alerts) |
+| Input Validation | Input Validation Engine (Python deterministic) |
 | RAG | ChromaDB + sentence-transformers (local) |
 | Database | MongoDB (Motor async) |
 | PDF export | reportlab |
