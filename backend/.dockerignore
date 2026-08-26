@@ -1,0 +1,10 @@
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+.env
+.env.*
+tests
+data/chroma_db.broken-bak
+.git
+.pytest_cache

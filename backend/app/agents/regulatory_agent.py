@@ -2,10 +2,8 @@ import json
 import re
 from pathlib import Path
 
-import anthropic
-
 from app.agents._llm_json import parse_llm_json
-from app.core.config import settings
+from app.core.anthropic_client import build_anthropic_client, create_with_retry_log
 from app.rag.vector_store import EUDRVectorStore
 
 CHROMA_DIR = str(Path(__file__).parents[3] / "backend" / "data" / "chroma_db")
@@ -65,11 +63,7 @@ Guidelines:
 class RegulatoryAgent:
     def __init__(self):
         self._store = EUDRVectorStore(persist_directory=CHROMA_DIR)
-        self._client = (
-            anthropic.Anthropic(api_key=settings.anthropic_api_key)
-            if settings.anthropic_api_key
-            else None
-        )
+        self._client = build_anthropic_client()
 
     def analyze(self, query: str, commodity: str, origin: str, destination: str, trade_direction: str = "export") -> dict:
         is_import = trade_direction == "import"
@@ -173,7 +167,9 @@ class RegulatoryAgent:
         response = None
         parsed = None
         for attempt in range(2):
-            response = self._client.messages.create(
+            response = create_with_retry_log(
+                self._client,
+                log_context=f"RegulatoryAgent.analyze({origin}->{destination}, attempt {attempt + 1}/2)",
                 model="claude-haiku-4-5",
                 max_tokens=2048,
                 system=system_prompt,

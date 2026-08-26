@@ -2,10 +2,8 @@ import json
 import re
 from datetime import datetime, timezone
 
-import anthropic
-
 from app.agents._llm_json import parse_llm_json
-from app.core.config import settings
+from app.core.anthropic_client import build_anthropic_client, create_with_retry_log
 
 _SYSTEM_PROMPT_EXPORT = """\
 You are a C-suite trade intelligence advisor for a Brazilian agricultural exporter selling to the EU.
@@ -169,11 +167,7 @@ _MOCK_IMPORT = {
 
 class ExecutiveAgent:
     def __init__(self):
-        self._client = (
-            anthropic.Anthropic(api_key=settings.anthropic_api_key)
-            if settings.anthropic_api_key
-            else None
-        )
+        self._client = build_anthropic_client()
 
     async def synthesize(
         self,
@@ -229,7 +223,9 @@ class ExecutiveAgent:
         model = "claude-sonnet-4-6"
         response = None
         for attempt in range(2):
-            response = self._client.messages.create(
+            response = create_with_retry_log(
+                self._client,
+                log_context=f"ExecutiveAgent.synthesize({destination}, attempt {attempt + 1}/2)",
                 model=model,
                 max_tokens=3072,
                 system=system_prompt,

@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AnalyzeRequest, AnalyzeResponse, HistoryItem, CompareRequest, CompareResponse, OptimizationResult, AuditPathResult, GlobalRiskResponse } from '../types';
 
 const client = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://127.0.0.1:8000',
   headers: { 'Content-Type': 'application/json' },
 });
 

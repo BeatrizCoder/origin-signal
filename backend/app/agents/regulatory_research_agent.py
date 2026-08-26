@@ -9,11 +9,12 @@ deterministic layer (tariff_agent.py, regulatory_agent.py) decides how to
 use it.
 """
 
+import logging
 from datetime import datetime, timezone
 
-import anthropic
+from app.core.anthropic_client import build_anthropic_client, create_with_retry_log
 
-from app.core.config import settings
+logger = logging.getLogger(__name__)
 
 MODEL = "claude-haiku-4-5-20251001"
 
@@ -106,11 +107,7 @@ class RegulatoryResearchAgent:
     ]
 
     def __init__(self):
-        self._client = (
-            anthropic.Anthropic(api_key=settings.anthropic_api_key)
-            if settings.anthropic_api_key
-            else None
-        )
+        self._client = build_anthropic_client()
 
     async def research(
         self,
@@ -170,7 +167,9 @@ After research, summarize your findings as regulatory context for risk assessmen
         while iteration < max_iterations:
             iteration += 1
 
-            response = self._client.messages.create(
+            response = create_with_retry_log(
+                self._client,
+                log_context=f"research({origin}->{destination}, iteration {iteration}/{max_iterations})",
                 model=MODEL,
                 max_tokens=1000,
                 system=system_prompt,
