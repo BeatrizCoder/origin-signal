@@ -66,12 +66,20 @@ const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 const fmtBRL = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// higher-is-better coloring (readiness, GPS coverage) — inverse of theme.riskColor
+// higher-is-better coloring (readiness) — inverse of theme.riskColor
 function goodColor(v: number): string {
-  if (v >= 70) return COLORS.petroleo;
+  if (v > 60) return COLORS.petroleo;
   if (v >= 40) return COLORS.amberBright;
   return COLORS.danger;
 }
+
+const RISK_DIM_META: Record<string, { agent: string; descriptor: string }> = {
+  regulatory: { agent: 'Regulatory Intelligence', descriptor: 'Compliance exposure' },
+  market:     { agent: 'Market Intelligence',     descriptor: 'Price volatility' },
+  climate:    { agent: 'Climate Intelligence',     descriptor: 'Weather & yield risk' },
+  logistics:  { agent: 'Logistics Intelligence',   descriptor: 'Route & transit risk' },
+  tariff:     { agent: 'Tariff Intelligence',       descriptor: 'Duty & tax burden' },
+};
 
 function confidenceColor(v: number): string {
   if (v >= 75) return COLORS.petroleo;
@@ -251,7 +259,9 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const originPort  = result.logistics?.origin_port ?? 'Santos';
   const destPort    = result.logistics?.destination_port ?? 'Hamburg';
   const transitDays = result.logistics?.estimated_transit_days ?? 18;
-  const marketScore = clamp(result.market?.market_risk_score ?? 50);
+
+  const topRiskDim  = dims.reduce((max, d) => (d.value > max.value ? d : max), dims[0]);
+  const topRiskMeta = RISK_DIM_META[topRiskDim.key] ?? { agent: 'Risk Intelligence', descriptor: 'Composite risk' };
 
   const riskBadge = riskLevel === 'HIGH' ? t('high') : riskLevel === 'MEDIUM' ? t('medium') : t('low');
   const verdictLabel = verdict === 'Go' ? t('go') : verdict === 'Hold' ? t('hold') : t('caution');
@@ -575,29 +585,22 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
               <HexDivider />
 
-              {/* ── 3 Metric cards ── */}
+              {/* ── 2 Metric cards ── */}
               <RevealSection visible={revealedSections.has('metrics')}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, padding: '28px 0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, padding: '28px 0' }}>
                   <MetricCard
                     label={isImport ? 'SUPPLY RELIABILITY' : t('export_readiness')}
                     value={String(isImport ? (result.supply_reliability ?? readiness) : readiness)}
                     unit="/100"
                     color={goodColor(readiness)}
-                    sub={isImport ? 'Buyer reliability score' : `Risk score: ${score}/100`}
+                    sub="Higher is better"
                   />
                   <MetricCard
-                    label={t('market_risk')}
-                    value={String(marketScore)}
+                    label="KEY RISK SIGNAL"
+                    value={String(topRiskDim.value)}
                     unit="/100"
-                    color={riskColor(marketScore)}
-                    sub={result.market?.price_trend ?? 'Stable'}
-                  />
-                  <MetricCard
-                    label={t('gps_coverage')}
-                    value={String(gpsPct)}
-                    unit="%"
-                    color={gpsPct >= 100 ? COLORS.petroleo : COLORS.danger}
-                    sub={gpsPct >= 100 ? 'All suppliers mapped' : 'Incomplete traceability'}
+                    color={riskColor(topRiskDim.value)}
+                    sub={`${topRiskMeta.agent} · ${topRiskMeta.descriptor} — Highest risk dimension`}
                   />
                 </div>
               </RevealSection>
