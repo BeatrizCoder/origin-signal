@@ -285,7 +285,8 @@ def haversine_distance(coord1, coord2):
 def calculate_minimum_coverage_path(
     target_coverage_pct: float = 80.0,
     start_region: str = 'Cerrado Mineiro',
-    commodity: str = 'coffee'
+    commodity: str = 'coffee',
+    destination: str = 'European Union'
 ) -> dict:
     """
     Nearest neighbor heuristic para TSP sobre malha hexagonal.
@@ -364,8 +365,18 @@ def calculate_minimum_coverage_path(
     daily_cost = audit_days * 450  # R$ 450/dia auditor
     total_mission_cost = flight_cost + daily_cost
 
-    # Vs custo de não regularizar (multas EUDR estimadas)
-    eudr_fine_risk = covered_volume * 50000  # R$ 50k por kt de risco
+    # Vs custo de não regularizar (multas EUDR estimadas, ou risco regulatório genérico fora da UE)
+    eudr_applies = destination in EUDR_APPLICABLE_DESTINATIONS
+    fine_risk = covered_volume * 50000  # R$ 50k por kt de risco
+    fine_risk_label = 'EUDR Fine Risk' if eudr_applies else 'Regulatory Compliance Risk'
+    fine_risk_phrase = 'EUDR fine risk' if eudr_applies else 'regulatory compliance risk'
+    title_coverage = 'EUDR compliance coverage' if eudr_applies else 'supply chain coverage'
+    basis_coverage = 'EUDR compliance coverage' if eudr_applies else 'supply chain compliance coverage'
+    title = f"Optimal audit route — maximum {title_coverage} with minimum travel"
+    mathematical_basis = (
+        f"Nearest-neighbor heuristic for TSP on hexagonal adjacency graph — minimizes total audit path "
+        f"while maximizing {basis_coverage} (Honeycomb Conjecture applied to audit logistics)"
+    )
 
     volume_covered_kt = sum(r['volume'] for r in selected)
     volume_unlocked_kt = sum(r['unlock'] for r in selected)
@@ -375,6 +386,8 @@ def calculate_minimum_coverage_path(
         'target_coverage_pct': target_coverage_pct,
         'achieved_coverage_pct': achieved_coverage_pct,
         'start_region': start_region,
+        'destination': destination,
+        'eudr_applies': eudr_applies,
         'route': [
             {
                 'stop': i + 1,
@@ -392,17 +405,19 @@ def calculate_minimum_coverage_path(
         'total_stops': len(selected),
         'audit_days': audit_days,
         'mission_cost_brl': round(total_mission_cost),
-        'eudr_fine_risk_brl': round(eudr_fine_risk),
-        'roi_ratio': round(eudr_fine_risk / max(total_mission_cost, 1), 1),
+        'fine_risk_brl': round(fine_risk),
+        'fine_risk_label': fine_risk_label,
+        'roi_ratio': round(fine_risk / max(total_mission_cost, 1), 1),
         'volume_covered_kt': round(volume_covered_kt, 1),
         'volume_unlocked_kt': round(volume_unlocked_kt, 1),
-        'mathematical_basis': 'Nearest-neighbor heuristic for TSP on hexagonal adjacency graph — minimizes total audit path while maximizing EUDR compliance coverage (Honeycomb Conjecture applied to audit logistics)',
+        'title': title,
+        'mathematical_basis': mathematical_basis,
         'insight': (
             f"Audit covers {volume_covered_kt:.1f}kt ({achieved_coverage_pct:.1f}% of total volume) "
             f"across {len(selected)} regions in {audit_days} days. "
             f"Expected regularization: {volume_unlocked_kt:.1f}kt unlocked for safe export. "
-            f"Mission cost R$ {total_mission_cost:,.0f} vs R$ {eudr_fine_risk:,.0f} EUDR fine risk "
-            f"(ROI: {round(eudr_fine_risk/max(total_mission_cost,1), 1)}x)."
+            f"Mission cost R$ {total_mission_cost:,.0f} vs R$ {fine_risk:,.0f} {fine_risk_phrase} "
+            f"(ROI: {round(fine_risk/max(total_mission_cost,1), 1)}x)."
         )
     }
 

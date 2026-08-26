@@ -363,16 +363,20 @@ export interface AuditPathResult {
   target_coverage_pct: number;
   achieved_coverage_pct: number;
   start_region: string;
+  destination: string;
+  eudr_applies: boolean;
   route: AuditStop[];
   route_segments: AuditRouteSegment[];
   total_distance_km: number;
   total_stops: number;
   audit_days: number;
   mission_cost_brl: number;
-  eudr_fine_risk_brl: number;
+  fine_risk_brl: number;
+  fine_risk_label: string;
   roi_ratio: number;
   volume_covered_kt: number;
   volume_unlocked_kt: number;
+  title: string;
   mathematical_basis: string;
   insight: string;
 }

@@ -35,11 +35,12 @@ export async function optimizeHoneycomb(budget: number, commodity: string): Prom
   return data;
 }
 
-export async function calculateAuditPath(targetCoverage: number, startRegion: string, commodity: string): Promise<AuditPathResult> {
+export async function calculateAuditPath(targetCoverage: number, startRegion: string, commodity: string, destination: string): Promise<AuditPathResult> {
   const { data } = await client.post<AuditPathResult>('/api/audit-path', {
     target_coverage_pct: targetCoverage,
     start_region: startRegion,
     commodity,
+    destination,
   });
   return data;
 }

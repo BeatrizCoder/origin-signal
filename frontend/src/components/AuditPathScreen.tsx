@@ -14,6 +14,13 @@ const REGIONS = [
   'Rondônia', 'Planalto Sul', 'Oeste da Bahia', 'Sul ES',
 ];
 
+const DESTINATIONS = [
+  'European Union', 'Norway', 'Switzerland', 'United Kingdom',
+  'United States', 'China', 'Japan', 'South Korea',
+  'Argentina', 'Uruguay', 'Paraguay', 'Colombia', 'Peru', 'Chile',
+  'Mexico', 'Saudi Arabia', 'UAE',
+];
+
 const fmtBRL = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
 
@@ -40,6 +47,7 @@ export default function AuditPathScreen({ onBack }: Props) {
   const [coverage,  setCoverage]  = useState(80);
   const [startRegion, setStartRegion] = useState('Cerrado Mineiro');
   const [commodity, setCommodity] = useState('coffee');
+  const [destination, setDestination] = useState('European Union');
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState<string | null>(null);
   const [result,    setResult]    = useState<AuditPathResult | null>(null);
@@ -51,7 +59,7 @@ export default function AuditPathScreen({ onBack }: Props) {
     setError(null);
     setResult(null);
     try {
-      const data = await calculateAuditPath(coverage, startRegion, commodity);
+      const data = await calculateAuditPath(coverage, startRegion, commodity, destination);
       setResult(data);
     } catch {
       setError('Failed to calculate audit route. Please try again.');
@@ -137,12 +145,12 @@ export default function AuditPathScreen({ onBack }: Props) {
       <main style={{ padding: '24px 28px 60px', maxWidth: 1100, margin: '0 auto' }}>
 
         <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 24, fontFamily: FONT }}>
-          {t('audit_subtitle')}
+          {result ? result.title : t('audit_subtitle')}
         </div>
 
         {/* Config section */}
         <div style={{ ...CARD, marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 24 }}>
             <div>
               <label style={LABEL_STYLE}>{t('coverage_target')}</label>
               <input
@@ -188,6 +196,21 @@ export default function AuditPathScreen({ onBack }: Props) {
                 <option value="coffee">Coffee</option>
                 <option value="soybeans">Soybeans</option>
                 <option value="fruits">Fruits</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={LABEL_STYLE}>{t('destination_label')}</label>
+              <select
+                value={destination}
+                onChange={e => setDestination(e.target.value)}
+                style={{
+                  width: '100%', background: COLORS.bg, border: `1px solid ${COLORS.line}`,
+                  borderRadius: 6, color: COLORS.textPrimary, fontSize: 13,
+                  padding: '10px 12px', outline: 'none', cursor: 'pointer', fontFamily: FONT,
+                }}
+              >
+                {DESTINATIONS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
           </div>
@@ -246,8 +269,8 @@ export default function AuditPathScreen({ onBack }: Props) {
                 <div style={{ fontFamily: FONT, fontSize: 22, fontWeight: 800, color: COLORS.textPrimary }}>{fmtBRL(result.mission_cost_brl)}</div>
               </div>
               <div style={STAT_CARD}>
-                <Eyebrow>{t('eudr_fine_risk')}</Eyebrow>
-                <div style={{ fontFamily: FONT, fontSize: 22, fontWeight: 800, color: COLORS.danger }}>{fmtBRL(result.eudr_fine_risk_brl)}</div>
+                <Eyebrow>{result.fine_risk_label}</Eyebrow>
+                <div style={{ fontFamily: FONT, fontSize: 22, fontWeight: 800, color: COLORS.danger }}>{fmtBRL(result.fine_risk_brl)}</div>
               </div>
               <div style={STAT_CARD}>
                 <Eyebrow>ROI</Eyebrow>

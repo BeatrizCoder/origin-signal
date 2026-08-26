@@ -490,7 +490,8 @@ async def audit_path(payload: dict) -> dict:
     return calculate_minimum_coverage_path(
         target_coverage_pct=payload.get('target_coverage_pct', 80),
         start_region=payload.get('start_region', 'Cerrado Mineiro'),
-        commodity=payload.get('commodity', 'coffee')
+        commodity=payload.get('commodity', 'coffee'),
+        destination=payload.get('destination', 'European Union')
     )
 
 
