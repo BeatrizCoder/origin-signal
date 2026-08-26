@@ -345,11 +345,16 @@ async def analyze(body: AnalyzeRequest) -> dict:
 @router.post("/compare")
 async def compare_routes(body: CompareRequest) -> dict:
 
+    # Busca a taxa de câmbio uma única vez — origens com o mesmo acordo comercial
+    # devem ter landed_cost idêntico, o que só é garantido com uma taxa compartilhada
+    # (chamadas independentes por origem podiam divergir por timeout/rate-limit da API externa)
+    brl_rate = await _tariff.fetch_brl_rate()
+
     # Roda tariff + logistics para cada origem em paralelo
     tasks = []
     for origin in body.origins:
         tasks.append(asyncio.gather(
-            _tariff.analyze(body.commodity, origin, body.cif_value_usd),
+            _tariff.analyze(body.commodity, origin, body.cif_value_usd, brl_rate),
             _logistics.analyze(origin, body.destination, body.commodity, body.trade_direction),
         ))
 

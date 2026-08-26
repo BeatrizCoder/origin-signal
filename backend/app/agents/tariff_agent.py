@@ -46,18 +46,28 @@ def _risk_level(score: int) -> str:
 
 
 class TariffAgent:
-    async def analyze(self, commodity: str, origin: str, cif_value_usd: float = 10000) -> dict:
+    @staticmethod
+    async def fetch_brl_rate() -> float:
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                r = await client.get("https://api.exchangerate-api.com/v4/latest/USD")
+                return r.json()["rates"]["BRL"]
+        except Exception:
+            return 5.20
+
+    async def analyze(self, commodity: str, origin: str, cif_value_usd: float = 10000, brl_rate: float | None = None) -> dict:
         ncm_info = NCM_DATA.get(commodity, {}).get("default", NCM_DATA["coffee"]["default"])
 
         agreement = TRADE_AGREEMENTS.get(origin, {"name": "WTO/MFN", "ii_reduction": 0})
         ii_rate = ncm_info["ii_tec"] * (1 - agreement["ii_reduction"] / 100)
 
-        try:
-            async with httpx.AsyncClient(timeout=5) as client:
-                r = await client.get("https://api.exchangerate-api.com/v4/latest/USD")
-                brl_rate = r.json()["rates"]["BRL"]
-        except Exception:
-            brl_rate = 5.20
+        # brl_rate may be pre-fetched by the caller (e.g. /compare) so multiple origins
+        # in the same request share one rate instead of racing independent API calls —
+        # a race here previously let identical-agreement origins land on different rates
+        # (one hitting the live API, another timing out to the 5.20 fallback), producing
+        # non-identical landed costs that silently broke the Compare Routes tie-break.
+        if brl_rate is None:
+            brl_rate = await self.fetch_brl_rate()
 
         cif_brl = cif_value_usd * brl_rate
 
