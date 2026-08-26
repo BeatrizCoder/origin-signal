@@ -369,8 +369,8 @@ async def compare_routes(body: CompareRequest) -> dict:
             'ii_reduction_pct': tariff.get('ii_reduction_pct', 0),
         })
 
-    # Ordena por custo landed
-    comparisons.sort(key=lambda x: x['landed_cost_brl'])
+    # Ordena por custo landed; empate → menor risk_score; empate → menor transit_days
+    comparisons.sort(key=lambda x: (x['landed_cost_brl'], x['total_risk_score'], x['transit_days']))
 
     # Marca melhor e pior
     if comparisons:
