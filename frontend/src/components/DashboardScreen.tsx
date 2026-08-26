@@ -192,7 +192,8 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   async function handleExport(format: 'pdf' | 'excel') {
     setDownloading(format);
     try {
-      const resp = await fetch(`http://127.0.0.1:8000/api/export/${format}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const resp = await fetch(`${apiUrl}/api/export/${format}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(result),
