@@ -73,12 +73,14 @@ function goodColor(v: number): string {
   return COLORS.danger;
 }
 
-const RISK_DIM_META: Record<string, { agent: string; descriptor: string }> = {
-  regulatory: { agent: 'Regulatory Intelligence', descriptor: 'Compliance exposure' },
-  market:     { agent: 'Market Intelligence',     descriptor: 'Price volatility' },
-  climate:    { agent: 'Climate Intelligence',     descriptor: 'Weather & yield risk' },
-  logistics:  { agent: 'Logistics Intelligence',   descriptor: 'Route & transit risk' },
-  tariff:     { agent: 'Tariff Intelligence',       descriptor: 'Duty & tax burden' },
+// name comes from t(key) (short, already localized) — avoids hardcoded long
+// agent names ("Regulatory Intelligence") overflowing the narrow hero card
+const RISK_DIM_META: Record<string, { descriptor: string }> = {
+  regulatory: { descriptor: 'Compliance exposure' },
+  market:     { descriptor: 'Price volatility' },
+  climate:    { descriptor: 'Weather & yield risk' },
+  logistics:  { descriptor: 'Route & transit risk' },
+  tariff:     { descriptor: 'Duty & tax burden' },
 };
 
 function confidenceColor(v: number): string {
@@ -140,7 +142,7 @@ function MetricCard({ label, value, unit, color, sub, tooltip }: {
   return (
     <div style={{
       background: COLORS.panel, border: '1px solid rgba(255,255,255,0.04)',
-      borderRadius: 10, padding: '16px 18px',
+      borderRadius: 10, padding: '16px 18px', minWidth: 0,
       display: 'flex', flexDirection: 'column', gap: 6,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -154,7 +156,7 @@ function MetricCard({ label, value, unit, color, sub, tooltip }: {
         <span style={{ fontFamily: FONT, fontSize: 34, fontWeight: 800, color, lineHeight: 1 }}>{value}</span>
         <span style={{ fontFamily: FONT, fontSize: 13, color: COLORS.textSecondary }}>{unit}</span>
       </div>
-      <div style={{ fontSize: 11.5, color: COLORS.textSecondary, fontFamily: FONT }}>{sub}</div>
+      <div style={{ fontSize: 11.5, color: COLORS.textSecondary, fontFamily: FONT, overflowWrap: 'anywhere' as const }}>{sub}</div>
     </div>
   );
 }
@@ -265,7 +267,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const transitDays = result.logistics?.estimated_transit_days ?? 18;
 
   const topRiskDim  = dims.reduce((max, d) => (d.value > max.value ? d : max), dims[0]);
-  const topRiskMeta = RISK_DIM_META[topRiskDim.key] ?? { agent: 'Risk Intelligence', descriptor: 'Composite risk' };
+  const topRiskMeta = RISK_DIM_META[topRiskDim.key] ?? { descriptor: 'Composite risk' };
 
   const riskBadge = riskLevel === 'HIGH' ? t('high') : riskLevel === 'MEDIUM' ? t('medium') : t('low');
   const verdictLabel = verdict === 'Go' ? t('go') : verdict === 'Hold' ? t('hold') : t('caution');
@@ -611,7 +613,8 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                     value={String(topRiskDim.value)}
                     unit="/100"
                     color={riskColor(topRiskDim.value)}
-                    sub={`${topRiskMeta.agent} · ${topRiskMeta.descriptor} — Highest risk dimension`}
+                    sub={`${t(topRiskDim.key)} · ${topRiskMeta.descriptor}`}
+                    tooltip={t('key_risk_signal_tooltip')}
                   />
                 </div>
               </RevealSection>
