@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import LangToggle from './LangToggle';
 import Logo from './ui/Logo';
-import { COLORS, FONT } from '../theme';
+import PillChip from './ui/PillChip';
+import { COLORS, FONT, riskColor } from '../theme';
+import { getHistory } from '../services/api';
+import type { HistoryItem } from '../types';
 
 export type Focus          = 'regulatory' | 'climate' | 'market' | 'composite';
 export type Horizon        = '30' | '90' | '365';
@@ -62,6 +66,30 @@ const IMPORT_ORIGINS = [
   'Vietnam',
   'Ethiopia',
 ];
+
+// explicit map (not a slice/prefix heuristic) — avoids collisions like
+// "United States"/"United Kingdom" both truncating to the same code
+const COUNTRY_CODE: Record<string, string> = {
+  'Brazil': 'BR', 'European Union': 'EU', 'Norway': 'NO', 'Switzerland': 'CH',
+  'United Kingdom': 'UK', 'United States': 'US', 'China': 'CN', 'Japan': 'JP',
+  'South Korea': 'KR', 'Argentina': 'AR', 'Uruguay': 'UY', 'Paraguay': 'PY',
+  'Colombia': 'CO', 'Peru': 'PE', 'Chile': 'CL', 'Mexico': 'MX',
+  'Saudi Arabia': 'SA', 'UAE': 'AE', 'Vietnam': 'VN', 'Ethiopia': 'ET',
+};
+const countryCode = (name: string) => COUNTRY_CODE[name] ?? name.slice(0, 2).toUpperCase();
+
+const VERDICT_COLOR: Record<string, string> = {
+  Go: COLORS.petroleo, Caution: COLORS.amberBright, Hold: COLORS.danger,
+};
+
+function formatRelativeTime(iso: string, t: (key: 'hours_ago' | 'yesterday') => string): string {
+  const diffMs    = Date.now() - new Date(iso).getTime();
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays  = Math.floor(diffMs / 86_400_000);
+  if (diffDays >= 2) return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+  if (diffDays === 1) return t('yesterday');
+  return `${Math.max(1, diffHours)} ${t('hours_ago')}`;
+}
 
 const FOCUS_OPTIONS: { value: Focus; label: string }[] = [
   { value: 'regulatory', label: 'Regulatory' },
@@ -137,11 +165,21 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
   const [horizon,         setHorizon]         = useState<Horizon>('90');
   const [query,           setQuery]           = useState('');
   const [tradeDirection,  setTradeDirection]  = useState<TradeDirection>(initialTradeDirection ?? 'export');
+  const [recentAnalyses,  setRecentAnalyses]  = useState<HistoryItem[]>([]);
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
 
   const isImport = tradeDirection === 'import';
   const destinationOptions   = DESTINATIONS.includes(destination) ? DESTINATIONS : [destination, ...DESTINATIONS];
   const importOriginOptions  = IMPORT_ORIGINS.includes(importOrigin) ? IMPORT_ORIGINS : [importOrigin, ...IMPORT_ORIGINS];
+
+  useEffect(() => {
+    let cancelled = false;
+    getHistory(5)
+      .then(data => { if (!cancelled) setRecentAnalyses(data.slice(0, 5)); })
+      .catch(() => { if (!cancelled) setRecentAnalyses([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   function addQueryChip(text: string) {
     setQuery(prev => (prev ? `${prev} ${text}` : text));
@@ -361,6 +399,56 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
           {t('compare_routes')} →
         </button>
       </form>
+
+      {/* Recent Analyses */}
+      {recentAnalyses.length > 0 && (
+        <div style={{ width: '100%', maxWidth: 480, marginTop: 32 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: COLORS.textSecondary,
+            textTransform: 'uppercase' as const, fontFamily: FONT, marginBottom: 10,
+          }}>
+            {t('recent_analyses')}
+          </div>
+          <div style={{
+            background: COLORS.panel, border: `1px solid ${COLORS.line}`,
+            borderRadius: 8, overflow: 'hidden',
+          }}>
+            {recentAnalyses.map((item, i) => {
+              const isImportItem = item.trade_direction === 'import';
+              const route = isImportItem
+                ? `${countryCode(item.origin)}→${countryCode('Brazil')}`
+                : `${countryCode('Brazil')}→${countryCode(item.destination)}`;
+              const verdict = item.overall_verdict;
+              const verdictLabel = verdict === 'Go' ? t('go') : verdict === 'Hold' ? t('hold') : t('caution');
+              const verdictColor = VERDICT_COLOR[verdict] ?? COLORS.textSecondary;
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => navigate(`/analysis/${item.id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px',
+                    borderTop: i > 0 ? `1px solid ${COLORS.line}` : 'none',
+                    cursor: 'pointer', transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <PillChip color={COLORS.amberBright}>{item.commodity?.toUpperCase()}</PillChip>
+                  <span style={{ fontSize: 12, color: COLORS.textSecondary, fontFamily: FONT, fontWeight: 600 }}>{route}</span>
+                  <span style={{ fontFamily: FONT, fontSize: 14, fontWeight: 800, color: riskColor(item.overall_risk_score) }}>
+                    {item.overall_risk_score}
+                  </span>
+                  {verdict && <PillChip color={verdictColor}>{verdictLabel.toUpperCase()}</PillChip>}
+                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: COLORS.textSecondary, fontFamily: FONT, whiteSpace: 'nowrap' as const }}>
+                    {formatRelativeTime(item.created_at, t)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div style={{
