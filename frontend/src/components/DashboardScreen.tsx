@@ -134,8 +134,8 @@ function handlePrimaryAmberHover(e: React.MouseEvent<HTMLButtonElement>, enterin
   e.currentTarget.style.opacity = entering ? '0.85' : '1';
 }
 
-function MetricCard({ label, value, unit, color, sub }: {
-  label: string; value: string; unit: string; color: string; sub: string;
+function MetricCard({ label, value, unit, color, sub, tooltip }: {
+  label: string; value: string; unit: string; color: string; sub: string; tooltip?: string;
 }) {
   return (
     <div style={{
@@ -143,10 +143,13 @@ function MetricCard({ label, value, unit, color, sub }: {
       borderRadius: 10, padding: '16px 18px',
       display: 'flex', flexDirection: 'column', gap: 6,
     }}>
-      <div style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: COLORS.textSecondary,
-        textTransform: 'uppercase' as const, fontFamily: FONT,
-      }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: COLORS.textSecondary,
+          textTransform: 'uppercase' as const, fontFamily: FONT,
+        }}>{label}</div>
+        {tooltip && <Tooltip text={tooltip} position="right" />}
+      </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
         <span style={{ fontFamily: FONT, fontSize: 34, fontWeight: 800, color, lineHeight: 1 }}>{value}</span>
         <span style={{ fontFamily: FONT, fontSize: 13, color: COLORS.textSecondary }}>{unit}</span>
@@ -156,12 +159,13 @@ function MetricCard({ label, value, unit, color, sub }: {
   );
 }
 
-function SignalRow({ icon, color, text, detail }: { icon: string; color: string; text: string; detail?: string }) {
+function SignalRow({ icon, color, text, detail, tooltip }: { icon: string; color: string; text: string; detail?: string; tooltip?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, fontFamily: FONT, color: COLORS.textPrimary }}>
       <i className={icon} style={{ width: 18, color, flexShrink: 0, textAlign: 'center' as const }} />
       <span>{text}</span>
       {detail && <span style={{ color: COLORS.textSecondary, fontSize: 12.5, marginLeft: 2 }}>— {detail}</span>}
+      {tooltip && <Tooltip text={tooltip} position="right" />}
     </div>
   );
 }
@@ -316,10 +320,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   const trendUp   = /up|ris|alta/.test(trendLower);
   const trendDown = /down|fall|queda|baixa/.test(trendLower);
   const marketSignal = trendUp
-    ? { icon: 'fas fa-arrow-trend-up', color: COLORS.bronze, text: 'Market pressure trending up' }
+    ? { icon: 'fas fa-arrow-trend-up', color: COLORS.bronze, text: 'Market pressure trending up', tooltip: t('market_risk_tooltip') }
     : trendDown
-    ? { icon: 'fas fa-arrow-trend-down', color: COLORS.petroleo, text: 'Market pressure easing' }
-    : { icon: 'fas fa-minus', color: COLORS.textSecondary, text: 'Market pressure stable' };
+    ? { icon: 'fas fa-arrow-trend-down', color: COLORS.petroleo, text: 'Market pressure easing', tooltip: t('market_risk_tooltip') }
+    : { icon: 'fas fa-minus', color: COLORS.textSecondary, text: 'Market pressure stable', tooltip: t('market_risk_tooltip') };
 
   const climateLevel = result.climate?.risk_level ?? 'Stable';
   const climateScore = clamp(result.climate?.climate_risk_score ?? 50);
@@ -330,8 +334,8 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
   };
 
   const gapSignal = gpsPct >= 100
-    ? { icon: 'fas fa-circle-check', color: COLORS.petroleo, text: 'Full EUDR traceability', detail: '100% GPS coverage confirmed' }
-    : { icon: 'fas fa-triangle-exclamation', color: COLORS.amberBright, text: 'EUDR traceability gap', detail: `${100 - gpsPct}% GPS coverage pending` };
+    ? { icon: 'fas fa-circle-check', color: COLORS.petroleo, text: 'Full EUDR traceability', detail: '100% GPS coverage confirmed', tooltip: t('gps_coverage_tooltip') }
+    : { icon: 'fas fa-triangle-exclamation', color: COLORS.amberBright, text: 'EUDR traceability gap', detail: `${100 - gpsPct}% GPS coverage pending`, tooltip: t('gps_coverage_tooltip') };
 
   return (
     <div style={{
@@ -395,7 +399,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
 
           {/* Trade Risk Score */}
           <div>
-            <Eyebrow>{t('trade_risk_score')}</Eyebrow>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Eyebrow>{t('trade_risk_score')}</Eyebrow>
+              <Tooltip text={t('trade_risk_score_tooltip')} position="right" />
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0 18px' }}>
               <span style={{ fontFamily: FONT, fontSize: 52, fontWeight: 800, letterSpacing: -1.5, color: COLORS.amberBright, lineHeight: 1 }}>{score}</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -410,7 +417,10 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                 return (
                   <div key={key}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 11.5, color: COLORS.textSecondary, fontFamily: FONT }}>{t(key)}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: COLORS.textSecondary, fontFamily: FONT }}>
+                        {t(key)}
+                        <Tooltip text={t('agent_score_tooltip')} position="right" />
+                      </span>
                       <span style={{ fontSize: 11.5, fontWeight: 700, color: col, fontFamily: FONT }}>{value}</span>
                     </div>
                     <ProgressMeter value={value} color={col} />
@@ -594,6 +604,7 @@ export default function DashboardScreen({ result, commodity, horizon, origin, de
                     unit="/100"
                     color={goodColor(readiness)}
                     sub="Higher is better"
+                    tooltip={t('export_readiness_tooltip')}
                   />
                   <MetricCard
                     label="KEY RISK SIGNAL"

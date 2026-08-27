@@ -74,8 +74,8 @@ export default function Tooltip({ text, position = 'top' }: Props) {
             position: 'absolute', zIndex: 50,
             background: POPUP_BG, border: `1px solid ${POPUP_BORDER}`,
             borderRadius: 6, padding: '10px 12px',
-            fontSize: 11, color: '#94A3B8', maxWidth: 220,
-            lineHeight: 1.5, fontFamily: FONT,
+            fontSize: 11, color: '#94A3B8', maxWidth: 260,
+            lineHeight: 1.5, fontFamily: FONT, whiteSpace: 'pre-line' as const,
             boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
             ...popupPosition,
           }}
