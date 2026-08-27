@@ -143,16 +143,6 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
   const destinationOptions   = DESTINATIONS.includes(destination) ? DESTINATIONS : [destination, ...DESTINATIONS];
   const importOriginOptions  = IMPORT_ORIGINS.includes(importOrigin) ? IMPORT_ORIGINS : [importOrigin, ...IMPORT_ORIGINS];
 
-  const origin = isImport ? importOrigin : 'Brazil';
-  const effDestination = isImport ? 'Brazil' : destination;
-
-  const getSubtitle = () => {
-    if (!origin && !effDestination) return 'TRADE RISK INTELLIGENCE';
-    const orig = origin ? origin.toUpperCase().slice(0, 3) : 'BR';
-    const dest = effDestination ? effDestination.toUpperCase().slice(0, 3) : '---';
-    return `TRADE RISK INTELLIGENCE · ${orig}→${dest}`;
-  };
-
   function addQueryChip(text: string) {
     setQuery(prev => (prev ? `${prev} ${text}` : text));
   }
@@ -194,7 +184,7 @@ export default function LandingScreen({ onAnalyze, onCompare, initialOrigin, ini
           <LangToggle />
         </div>
         <div style={{ fontSize: 12, letterSpacing: 2, color: COLORS.textSecondary, fontFamily: FONT, textTransform: 'uppercase' as const }}>
-          {getSubtitle()}
+          TRADE RISK INTELLIGENCE
         </div>
       </div>
 
